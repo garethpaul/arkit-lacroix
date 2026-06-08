@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Added `SodaSpawn.OnDisable` cleanup so tracked spawned cans are destroyed when
+  the spawner component is disabled or the scene exits.
 - Hardened `SodaSpawn` against invalid inspector caps and duplicate Rigidbody
   components on spawned can prefabs.
 - Added `make check` as the SDK-free Unity baseline wrapper.

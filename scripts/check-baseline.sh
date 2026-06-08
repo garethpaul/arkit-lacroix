@@ -30,6 +30,7 @@ for path in \
   "README.md" \
   "CHANGES.md" \
   "docs/plans/2026-06-08-unity-arkit-scene-baseline.md" \
+  "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -75,6 +76,10 @@ require_contains "Assets/SodaSpawn.cs" "soda.GetComponent<Rigidbody> () == null"
   "SodaSpawn must avoid adding duplicate Rigidbody components."
 require_contains "Assets/SodaSpawn.cs" "sodas.Clear ();" \
   "SodaSpawn must clear tracked object references after cleanup."
+require_contains "Assets/SodaSpawn.cs" "void OnDisable ()" \
+  "SodaSpawn must clean up spawned cans when disabled."
+require_contains "Assets/SodaSpawn.cs" "ClearSodas ();" \
+  "SodaSpawn disable cleanup must reuse the tracked cleanup path."
 require_contains ".gitignore" "/[Ll]ibrary/" "Unity Library directory must stay ignored."
 require_contains ".gitignore" "/[Tt]emp/" "Unity Temp directory must stay ignored."
 require_contains ".gitignore" "/[Oo]bj/" "Unity Obj directory must stay ignored."
@@ -90,6 +95,10 @@ require_contains "README.md" "keeps the original 1000-can cleanup cap explicit" 
   "README must document the SodaSpawn safety baseline."
 require_contains "README.md" "repairs invalid spawn caps" \
   "README must document the SodaSpawn inspector-value guard."
+require_contains "README.md" "cleans up tracked cans when the spawner is disabled" \
+  "README must document the SodaSpawn disable cleanup."
+require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
+  "CHANGES must document the SodaSpawn disable cleanup."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

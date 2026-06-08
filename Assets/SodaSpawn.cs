@@ -35,6 +35,10 @@ public class SodaSpawn : MonoBehaviour {
 		}
 	}
 
+	void OnDisable () {
+		ClearSodas ();
+	}
+
 	private void ClearSodas () {
 		foreach (GameObject oldSoda in sodas) {
 			if (oldSoda != null) {
