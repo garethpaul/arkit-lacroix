@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Restored README verification notes for the Unity source baseline after the
+  generated project overview refresh.
 - Corrected Unity build settings to use the checked-in `Assets/GameScene.unity`
   scene.
 - Added a repository baseline check for Unity version, active scene metadata,

@@ -47,7 +47,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- No dedicated automated test command was identified from the checked-in files. Verify changes by running the relevant build or manually exercising the sample.
+Run the SDK-free source baseline check first:
+
+```sh
+scripts/check-baseline.sh
+```
+
+Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain.
+
+The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, and keeps the original 1000-can cleanup cap explicit.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -66,6 +74,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `CHANGES.md` for the maintenance history.
 
 ## Contributing
 
