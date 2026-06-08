@@ -5,6 +5,8 @@ using UnityEngine;
 public class SodaSpawn : MonoBehaviour {
 
 	public GameObject sodaObject;
+	public int maxSodas = 1000;
+
 	private List<GameObject> sodas = new List<GameObject>();
 
 	// Use this for initialization
@@ -14,15 +16,26 @@ public class SodaSpawn : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if (sodaObject == null) {
+			return;
+		}
+
 		GameObject soda = Instantiate (sodaObject, this.gameObject.transform.position, this.gameObject.transform.rotation);
 		soda.AddComponent<Rigidbody> ();
 
 		sodas.Add (soda);
-		if (sodas.Count >= 1000) {
-			foreach (GameObject oldSoda in sodas) {
+		if (sodas.Count >= maxSodas) {
+			ClearSodas ();
+		}
+	}
+
+	private void ClearSodas () {
+		foreach (GameObject oldSoda in sodas) {
+			if (oldSoda != null) {
 				Destroy (oldSoda);
 			}
-			sodas = new List<GameObject> ();
 		}
+
+		sodas.Clear ();
 	}
 }

@@ -33,6 +33,8 @@ export path. Do not commit generated `Library/`, `Temp/`, `Obj/`, `Build/`, or
 ## Modernization Notes
 
 The current baseline keeps the original Unity/ARKit sample intact and corrects
-the active build scene to the checked-in `Assets/GameScene.unity`. A future pass
-should document the exact Unity batchmode export command, generated Xcode
-project settings, signing requirements, and device smoke-test evidence.
+the active build scene to the checked-in `Assets/GameScene.unity`. `SodaSpawn`
+keeps the original 1000-can cleanup cap explicit and skips spawning when the
+prefab reference is missing. A future pass should document the exact Unity
+batchmode export command, generated Xcode project settings, signing
+requirements, and device smoke-test evidence.
