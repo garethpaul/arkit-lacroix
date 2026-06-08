@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class SodaSpawn : MonoBehaviour {
 
+	private const int DefaultMaxSodas = 1000;
+
 	public GameObject sodaObject;
 	public int maxSodas = 1000;
 
@@ -11,7 +13,9 @@ public class SodaSpawn : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		
+		if (maxSodas < 1) {
+			maxSodas = DefaultMaxSodas;
+		}
 	}
 	
 	// Update is called once per frame
@@ -21,7 +25,9 @@ public class SodaSpawn : MonoBehaviour {
 		}
 
 		GameObject soda = Instantiate (sodaObject, this.gameObject.transform.position, this.gameObject.transform.rotation);
-		soda.AddComponent<Rigidbody> ();
+		if (soda.GetComponent<Rigidbody> () == null) {
+			soda.AddComponent<Rigidbody> ();
+		}
 
 		sodas.Add (soda);
 		if (sodas.Count >= maxSodas) {

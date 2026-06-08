@@ -2,6 +2,9 @@
 
 ## 2026-06-08
 
+- Hardened `SodaSpawn` against invalid inspector caps and duplicate Rigidbody
+  components on spawned can prefabs.
+- Added `make check` as the SDK-free Unity baseline wrapper.
 - Restored README verification notes for the Unity source baseline after the
   generated project overview refresh.
 - Corrected Unity build settings to use the checked-in `Assets/GameScene.unity`

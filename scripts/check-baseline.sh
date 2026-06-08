@@ -65,8 +65,14 @@ require_contains "Assets/GameScene.unity" "guid: 58d1050948cdd4bfeb2ee58ee309398
   "GameScene must reference the LaCroix prefab."
 require_contains "Assets/SodaSpawn.cs" "public int maxSodas = 1000;" \
   "SodaSpawn must keep the explicit 1000 object cap."
+require_contains "Assets/SodaSpawn.cs" "private const int DefaultMaxSodas = 1000;" \
+  "SodaSpawn must keep the default cap available for inspector-value repair."
+require_contains "Assets/SodaSpawn.cs" "if (maxSodas < 1)" \
+  "SodaSpawn must repair invalid maxSodas inspector values."
 require_contains "Assets/SodaSpawn.cs" "if (sodaObject == null)" \
   "SodaSpawn must not instantiate when the prefab reference is missing."
+require_contains "Assets/SodaSpawn.cs" "soda.GetComponent<Rigidbody> () == null" \
+  "SodaSpawn must avoid adding duplicate Rigidbody components."
 require_contains "Assets/SodaSpawn.cs" "sodas.Clear ();" \
   "SodaSpawn must clear tracked object references after cleanup."
 require_contains ".gitignore" "/[Ll]ibrary/" "Unity Library directory must stay ignored."
@@ -78,8 +84,16 @@ require_contains "README.md" "Unity editor version: 5.6.1p1" \
   "README must document the Unity editor version."
 require_contains "README.md" "scripts/check-baseline.sh" \
   "README must document the baseline check."
+require_contains "README.md" "make check" \
+  "README must document the make check wrapper."
 require_contains "README.md" "keeps the original 1000-can cleanup cap explicit" \
   "README must document the SodaSpawn safety baseline."
+require_contains "README.md" "repairs invalid spawn caps" \
+  "README must document the SodaSpawn inspector-value guard."
+
+require_file "Makefile"
+require_contains "Makefile" "scripts/check-baseline.sh" \
+  "Makefile must run the SDK-free baseline check."
 
 if [ -d "$ROOT_DIR/Library" ] || [ -d "$ROOT_DIR/Temp" ] || [ -d "$ROOT_DIR/Obj" ]; then
   printf '%s\n' "Generated Unity directories must not be present in the repository root." >&2
