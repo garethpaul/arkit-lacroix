@@ -1,5 +1,8 @@
 ## ARKit LaCroix Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 ARKit LaCroix is a Unity and ARKit demo where LaCroix cans rain into an
 augmented-reality scene.
 
