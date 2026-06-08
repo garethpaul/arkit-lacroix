@@ -79,9 +79,3 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Contributing
 
 Keep changes small and tied to the project that is already present in this repository. For code changes, document the toolchain used, avoid committing generated dependency directories or local configuration, and update this README when setup or verification steps change.
-
-## Existing Project Notes
-
-Prior README summary:
-
-> arkit-lacroix A raining LaCroix app built using Unity and ARKit. You can see a video of this demo via https://youtu.be/m9xaGxl466A Toolchain This repository is a legacy Unity ARKit project: - Unity editor version: 5.6.1p1 - Active build scene: `Assets/GameScene.unity`
