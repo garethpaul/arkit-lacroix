@@ -45,3 +45,6 @@ is explicit and user-controlled.
 - Unity version migrations bundled with unrelated gameplay changes
 - Camera data collection or upload behavior
 - Broken asset metadata or missing prefabs needed by the demo scene
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
