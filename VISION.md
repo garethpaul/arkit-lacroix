@@ -39,7 +39,7 @@ AR demos use device cameras and real-world surroundings. Future features should
 avoid collecting, uploading, or logging camera-derived data unless the data flow
 is explicit and user-controlled.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Large asset imports without provenance and purpose
 - Unity version migrations bundled with unrelated gameplay changes
