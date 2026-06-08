@@ -35,6 +35,11 @@ Contribution rules:
 
 ## Security And Privacy
 
+Canonical security policy and reporting:
+
+- [`SECURITY.md`](SECURITY.md)
+
+
 AR demos use device cameras and real-world surroundings. Future features should
 avoid collecting, uploading, or logging camera-derived data unless the data flow
 is explicit and user-controlled.
