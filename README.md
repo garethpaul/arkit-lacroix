@@ -1,4 +1,8 @@
 # arkit-lacroix
+
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 A raining LaCroix app built using Unity and ARKit.
 
 You can see a video of this demo via https://youtu.be/m9xaGxl466A
