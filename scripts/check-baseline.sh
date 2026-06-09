@@ -6,6 +6,7 @@ PROJECT_VERSION="$ROOT_DIR/ProjectSettings/ProjectVersion.txt"
 BUILD_SETTINGS="$ROOT_DIR/ProjectSettings/EditorBuildSettings.asset"
 GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
+RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 
 require_file() {
   path=$1
@@ -31,6 +32,7 @@ for path in \
   "CHANGES.md" \
   "docs/plans/2026-06-08-unity-arkit-scene-baseline.md" \
   "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
+  "$RUNTIME_CAP_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -70,6 +72,10 @@ require_contains "Assets/SodaSpawn.cs" "private const int DefaultMaxSodas = 1000
   "SodaSpawn must keep the default cap available for inspector-value repair."
 require_contains "Assets/SodaSpawn.cs" "if (maxSodas < 1)" \
   "SodaSpawn must repair invalid maxSodas inspector values."
+require_contains "Assets/SodaSpawn.cs" "private void RepairMaxSodas ()" \
+  "SodaSpawn must keep cap repair in a reusable helper."
+require_contains "Assets/SodaSpawn.cs" "void OnValidate ()" \
+  "SodaSpawn must repair invalid caps during Unity inspector validation."
 require_contains "Assets/SodaSpawn.cs" "if (sodaObject == null)" \
   "SodaSpawn must not instantiate when the prefab reference is missing."
 require_contains "Assets/SodaSpawn.cs" "soda.GetComponent<Rigidbody> () == null" \
@@ -95,10 +101,18 @@ require_contains "README.md" "keeps the original 1000-can cleanup cap explicit" 
   "README must document the SodaSpawn safety baseline."
 require_contains "README.md" "repairs invalid spawn caps" \
   "README must document the SodaSpawn inspector-value guard."
+require_contains "README.md" "runtime cap repair" \
+  "README must document the SodaSpawn runtime cap repair."
 require_contains "README.md" "cleans up tracked cans when the spawner is disabled" \
   "README must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
+require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
+  "CHANGES must document the SodaSpawn runtime cap repair."
+require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
+  "Runtime cap repair plan must record completed status."
+require_contains "$RUNTIME_CAP_PLAN" "make check" \
+  "Runtime cap repair plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

@@ -13,13 +13,17 @@ public class SodaSpawn : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		if (maxSodas < 1) {
-			maxSodas = DefaultMaxSodas;
-		}
+		RepairMaxSodas ();
+	}
+
+	void OnValidate () {
+		RepairMaxSodas ();
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		RepairMaxSodas ();
+
 		if (sodaObject == null) {
 			return;
 		}
@@ -47,5 +51,11 @@ public class SodaSpawn : MonoBehaviour {
 		}
 
 		sodas.Clear ();
+	}
+
+	private void RepairMaxSodas () {
+		if (maxSodas < 1) {
+			maxSodas = DefaultMaxSodas;
+		}
 	}
 }

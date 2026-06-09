@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-09
+
+- Added reusable `SodaSpawn.maxSodas` repair so invalid cap values are corrected
+  during startup, Unity inspector validation, and spawn updates.
+- Extended the SDK-free baseline and README notes for the runtime cap repair
+  contract.
+
 ## 2026-06-08
 
 - Added `SodaSpawn.OnDisable` cleanup so tracked spawned cans are destroyed when
