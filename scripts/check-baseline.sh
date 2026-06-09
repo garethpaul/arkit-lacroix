@@ -10,6 +10,7 @@ RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
 MAKE_GATE_PLAN="docs/plans/2026-06-09-unity-make-gate-targets.md"
+AMBIENT_GUARD_PLAN="docs/plans/2026-06-09-unity-ambient-light-null-guard.md"
 
 require_file() {
   path=$1
@@ -39,12 +40,15 @@ for path in \
   "$UPPER_CAP_PLAN" \
   "$MISSING_REFERENCE_PLAN" \
   "$MAKE_GATE_PLAN" \
+  "$AMBIENT_GUARD_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
   "Assets/GameScene.unity.meta" \
   "Assets/SodaSpawn.cs" \
   "Assets/SodaSpawn.cs.meta" \
+  "Assets/UnityARAmbient.cs" \
+  "Assets/UnityARAmbient.cs.meta" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
   "Assets/Models/can4.obj" \
@@ -66,12 +70,26 @@ require_contains "Assets/GameScene.unity.meta" "guid: c159f2591a9b5c843b0a044245
   "GameScene metadata GUID must match the active scene entry."
 require_contains "Assets/SodaSpawn.cs.meta" "guid: 5699d7c94266d45358e93a1669d14431" \
   "SodaSpawn script GUID must remain stable for scene references."
+require_contains "Assets/UnityARAmbient.cs.meta" "guid: 5587c957048494a2f96db36e0995449e" \
+  "UnityARAmbient script GUID must remain stable for scene references."
 require_contains "Assets/Models/LaCroix.prefab.meta" "guid: 58d1050948cdd4bfeb2ee58ee3093988" \
   "LaCroix prefab GUID must remain stable for scene references."
 require_contains "Assets/GameScene.unity" "guid: 5699d7c94266d45358e93a1669d14431" \
   "GameScene must reference SodaSpawn."
+require_contains "Assets/GameScene.unity" "guid: 5587c957048494a2f96db36e0995449e" \
+  "GameScene must reference UnityARAmbient."
 require_contains "Assets/GameScene.unity" "guid: 58d1050948cdd4bfeb2ee58ee3093988" \
   "GameScene must reference the LaCroix prefab."
+require_contains "Assets/UnityARAmbient.cs" "GetComponent<Light>()" \
+  "UnityARAmbient must read the scene Light component before applying ARKit intensity."
+require_contains "Assets/UnityARAmbient.cs" "UnityARSessionNativeInterface.GetARSessionNativeInterface" \
+  "UnityARAmbient must read the ARKit session before applying ambient intensity."
+require_contains "Assets/UnityARAmbient.cs" "if (l == null || m_Session == null)" \
+  "UnityARAmbient must guard missing Light components or AR sessions before updating intensity."
+require_contains "Assets/UnityARAmbient.cs" "GetARAmbientIntensity()" \
+  "UnityARAmbient must keep using ARKit ambient intensity."
+require_contains "Assets/UnityARAmbient.cs" "l.intensity = newai / 1000.0f;" \
+  "UnityARAmbient must keep the ARKit-to-Unity intensity conversion."
 require_contains "Assets/SodaSpawn.cs" "public int maxSodas = 1000;" \
   "SodaSpawn must keep the explicit 1000 object cap."
 require_contains "Assets/SodaSpawn.cs" "[Range (1, 1000)]" \
@@ -131,6 +149,8 @@ require_contains "README.md" "prunes missing spawned-can references" \
   "README must document the SodaSpawn missing-reference pruning guard."
 require_contains "README.md" "cleans up tracked cans when the spawner is disabled" \
   "README must document the SodaSpawn disable cleanup."
+require_contains "README.md" "guards AR ambient light updates" \
+  "README must document the UnityARAmbient null guard."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -139,6 +159,8 @@ require_contains "CHANGES.md" "above the original 1000-can cap" \
   "CHANGES must document the SodaSpawn upper-cap repair."
 require_contains "CHANGES.md" "missing spawned-can references" \
   "CHANGES must document the SodaSpawn missing-reference pruning guard."
+require_contains "CHANGES.md" "UnityARAmbient" \
+  "CHANGES must document the UnityARAmbient null guard."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
@@ -151,6 +173,10 @@ require_contains "$MISSING_REFERENCE_PLAN" "Status: Completed" \
   "Missing-reference pruning plan must record completed status."
 require_contains "$MISSING_REFERENCE_PLAN" "make check" \
   "Missing-reference pruning plan must record make check verification."
+require_contains "$AMBIENT_GUARD_PLAN" "Status: Completed" \
+  "Ambient light null guard plan must record completed status."
+require_contains "$AMBIENT_GUARD_PLAN" "make check" \
+  "Ambient light null guard plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

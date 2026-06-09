@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded `UnityARAmbient` device updates so a missing scene `Light` component
+  or unavailable AR session does not throw during ambient intensity updates.
 - Added root `make lint`, `make test`, `make build`, and `make check` gates
   around the SDK-free Unity baseline and documented the Unity build limit.
 - Pruned missing spawned-can references before `SodaSpawn` enforces the runtime

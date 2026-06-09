@@ -19,6 +19,10 @@ namespace UnityEngine.XR.iOS
 #if !UNITY_EDITOR
         public void Update()
         {
+            if (l == null || m_Session == null) {
+                return;
+            }
+
             // Convert ARKit intensity to Unity intensity
             // ARKit ambient intensity ranges 0-2000
             // Unity ambient intensity ranges 0-8 (for over-bright lights)
