@@ -7,6 +7,7 @@ public class SodaSpawn : MonoBehaviour {
 	private const int DefaultMaxSodas = 1000;
 
 	public GameObject sodaObject;
+	[Range (1, 1000)]
 	public int maxSodas = 1000;
 
 	private List<GameObject> sodas = new List<GameObject>();
@@ -54,7 +55,7 @@ public class SodaSpawn : MonoBehaviour {
 	}
 
 	private void RepairMaxSodas () {
-		if (maxSodas < 1) {
+		if (maxSodas < 1 || maxSodas > DefaultMaxSodas) {
 			maxSodas = DefaultMaxSodas;
 		}
 	}

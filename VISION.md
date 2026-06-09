@@ -20,6 +20,7 @@ Priority:
 - Preserve the existing Unity scenes, models, materials, and ARKit behavior
 - Keep demo media and screenshots tied to the checked-in experience
 - Keep `SodaSpawn` caps and cleanup behavior explicit in source
+- Keep spawn caps bounded to the original 1000-can cleanup limit
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes
 

@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Bounded `SodaSpawn.maxSodas` so values above the original 1000-can cap repair
+  back to the default cleanup limit.
 - Added reusable `SodaSpawn.maxSodas` repair so invalid cap values are corrected
   during startup, Unity inspector validation, and spawn updates.
 - Extended the SDK-free baseline and README notes for the runtime cap repair

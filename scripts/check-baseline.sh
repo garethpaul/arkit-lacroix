@@ -7,6 +7,7 @@ BUILD_SETTINGS="$ROOT_DIR/ProjectSettings/EditorBuildSettings.asset"
 GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
+UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 
 require_file() {
   path=$1
@@ -33,6 +34,7 @@ for path in \
   "docs/plans/2026-06-08-unity-arkit-scene-baseline.md" \
   "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
   "$RUNTIME_CAP_PLAN" \
+  "$UPPER_CAP_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -68,10 +70,12 @@ require_contains "Assets/GameScene.unity" "guid: 58d1050948cdd4bfeb2ee58ee309398
   "GameScene must reference the LaCroix prefab."
 require_contains "Assets/SodaSpawn.cs" "public int maxSodas = 1000;" \
   "SodaSpawn must keep the explicit 1000 object cap."
+require_contains "Assets/SodaSpawn.cs" "[Range (1, 1000)]" \
+  "SodaSpawn maxSodas must expose the original cap as a Unity inspector range."
 require_contains "Assets/SodaSpawn.cs" "private const int DefaultMaxSodas = 1000;" \
   "SodaSpawn must keep the default cap available for inspector-value repair."
-require_contains "Assets/SodaSpawn.cs" "if (maxSodas < 1)" \
-  "SodaSpawn must repair invalid maxSodas inspector values."
+require_contains "Assets/SodaSpawn.cs" "maxSodas < 1 || maxSodas > DefaultMaxSodas" \
+  "SodaSpawn must repair invalid maxSodas inspector values above or below the original cap."
 require_contains "Assets/SodaSpawn.cs" "private void RepairMaxSodas ()" \
   "SodaSpawn must keep cap repair in a reusable helper."
 require_contains "Assets/SodaSpawn.cs" "void OnValidate ()" \
@@ -101,6 +105,8 @@ require_contains "README.md" "keeps the original 1000-can cleanup cap explicit" 
   "README must document the SodaSpawn safety baseline."
 require_contains "README.md" "repairs invalid spawn caps" \
   "README must document the SodaSpawn inspector-value guard."
+require_contains "README.md" "bounds spawn caps to the original 1000-can limit" \
+  "README must document the SodaSpawn upper-cap guard."
 require_contains "README.md" "runtime cap repair" \
   "README must document the SodaSpawn runtime cap repair."
 require_contains "README.md" "cleans up tracked cans when the spawner is disabled" \
@@ -109,10 +115,16 @@ require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
   "CHANGES must document the SodaSpawn runtime cap repair."
+require_contains "CHANGES.md" "above the original 1000-can cap" \
+  "CHANGES must document the SodaSpawn upper-cap repair."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
   "Runtime cap repair plan must record make check verification."
+require_contains "$UPPER_CAP_PLAN" "Status: Completed" \
+  "Upper cap repair plan must record completed status."
+require_contains "$UPPER_CAP_PLAN" "make check" \
+  "Upper cap repair plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \
