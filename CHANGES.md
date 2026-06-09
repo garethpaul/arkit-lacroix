@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Added root `make lint`, `make test`, `make build`, and `make check` gates
+  around the SDK-free Unity baseline and documented the Unity build limit.
 - Pruned missing spawned-can references before `SodaSpawn` enforces the runtime
   cap so externally destroyed cans do not count against the live cleanup limit.
 - Bounded `SodaSpawn.maxSodas` so values above the original 1000-can cap repair

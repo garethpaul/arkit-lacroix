@@ -47,14 +47,17 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-Run the SDK-free source baseline check first:
+Run the SDK-free source baseline and root wrapper gates first:
 
 ```sh
+make lint
+make test
+make build
 make check
 scripts/check-baseline.sh
 ```
 
-Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain.
+Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in.
 
 The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, avoids duplicate Rigidbody components on spawned cans, and cleans up tracked cans when the spawner is disabled.
 
@@ -77,7 +80,11 @@ When the required SDK or runtime is unavailable, use static checks and source re
   the Unity inspector range and runtime repair helper.
 - `SodaSpawn` prunes missing spawned-can references before enforcing the cap so
   the tracked list reflects live spawned objects.
+- Root `make lint`, `make test`, `make build`, and `make check` all preserve
+  the SDK-free baseline before Unity-specific manual verification.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
+- See `docs/plans/2026-06-09-unity-make-gate-targets.md` for the root gate
+  target baseline.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 

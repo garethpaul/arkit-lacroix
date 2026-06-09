@@ -9,6 +9,7 @@ README="$ROOT_DIR/README.md"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
+MAKE_GATE_PLAN="docs/plans/2026-06-09-unity-make-gate-targets.md"
 
 require_file() {
   path=$1
@@ -37,6 +38,7 @@ for path in \
   "$RUNTIME_CAP_PLAN" \
   "$UPPER_CAP_PLAN" \
   "$MISSING_REFERENCE_PLAN" \
+  "$MAKE_GATE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -111,6 +113,12 @@ require_contains "README.md" "scripts/check-baseline.sh" \
   "README must document the baseline check."
 require_contains "README.md" "make check" \
   "README must document the make check wrapper."
+require_contains "README.md" "make lint" \
+  "README must document the lint gate."
+require_contains "README.md" "make test" \
+  "README must document the test gate."
+require_contains "README.md" "make build" \
+  "README must document the build gate."
 require_contains "README.md" "keeps the original 1000-can cleanup cap explicit" \
   "README must document the SodaSpawn safety baseline."
 require_contains "README.md" "repairs invalid spawn caps" \
@@ -147,6 +155,18 @@ require_contains "$MISSING_REFERENCE_PLAN" "make check" \
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \
   "Makefile must run the SDK-free baseline check."
+require_contains "Makefile" "lint:" \
+  "Makefile must expose a lint gate."
+require_contains "Makefile" "test:" \
+  "Makefile must expose a test gate."
+require_contains "Makefile" "build:" \
+  "Makefile must expose a build gate."
+require_contains "Makefile" "verify: lint test build" \
+  "Makefile must expose a combined verify gate."
+require_contains "$MAKE_GATE_PLAN" "Status: Completed" \
+  "Make gate plan must record completed status."
+require_contains "$MAKE_GATE_PLAN" "make check" \
+  "Make gate plan must record make check verification."
 
 if [ -d "$ROOT_DIR/Library" ] || [ -d "$ROOT_DIR/Temp" ] || [ -d "$ROOT_DIR/Obj" ]; then
   printf '%s\n' "Generated Unity directories must not be present in the repository root." >&2
