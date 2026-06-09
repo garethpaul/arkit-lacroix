@@ -6,6 +6,7 @@ namespace UnityEngine.XR.iOS
     public class UnityARAmbient : MonoBehaviour
     {
 
+        private const float MaxRenderableAmbientIntensity = 8000.0f;
         private Light l;
 		private UnityARSessionNativeInterface m_Session;
 
@@ -33,7 +34,8 @@ namespace UnityEngine.XR.iOS
 		{
 			if (float.IsNaN (ambientIntensity) ||
 				float.IsInfinity (ambientIntensity) ||
-				ambientIntensity < 0.0f) {
+				ambientIntensity < 0.0f ||
+				ambientIntensity > MaxRenderableAmbientIntensity) {
 				return false;
 			}
 

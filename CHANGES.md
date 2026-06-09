@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded `UnityARAmbient` against AR ambient intensity values above Unity's
+  over-bright light range before writing scene light intensity.
 - Guarded `UnityARAmbient` against non-finite or negative AR ambient intensity
   values before writing scene light intensity.
 - Refreshed `UnityARAmbient` ambient light dependency lookup during device

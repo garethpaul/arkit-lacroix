@@ -86,6 +86,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   device update.
 - `UnityARAmbient` rejects non-finite or negative AR ambient intensity values
   before writing to the scene `Light`.
+- `UnityARAmbient` rejects AR ambient intensity values above Unity's
+  over-bright range before writing to the scene `Light`.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
@@ -97,6 +99,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   AR ambient light dependency refresh guard.
 - See `docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md` for the AR
   ambient intensity value guard.
+- See `docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md` for the AR
+  ambient intensity upper-bound guard.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 
