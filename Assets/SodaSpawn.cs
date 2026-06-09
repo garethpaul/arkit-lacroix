@@ -24,6 +24,7 @@ public class SodaSpawn : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		RepairMaxSodas ();
+		PruneMissingSodas ();
 
 		if (sodaObject == null) {
 			return;
@@ -52,6 +53,14 @@ public class SodaSpawn : MonoBehaviour {
 		}
 
 		sodas.Clear ();
+	}
+
+	private void PruneMissingSodas () {
+		for (int i = sodas.Count - 1; i >= 0; i--) {
+			if (sodas [i] == null) {
+				sodas.RemoveAt (i);
+			}
+		}
 	}
 
 	private void RepairMaxSodas () {

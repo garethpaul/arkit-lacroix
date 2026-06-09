@@ -8,6 +8,7 @@ GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
+MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
 
 require_file() {
   path=$1
@@ -35,6 +36,7 @@ for path in \
   "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
   "$RUNTIME_CAP_PLAN" \
   "$UPPER_CAP_PLAN" \
+  "$MISSING_REFERENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -86,6 +88,14 @@ require_contains "Assets/SodaSpawn.cs" "soda.GetComponent<Rigidbody> () == null"
   "SodaSpawn must avoid adding duplicate Rigidbody components."
 require_contains "Assets/SodaSpawn.cs" "sodas.Clear ();" \
   "SodaSpawn must clear tracked object references after cleanup."
+require_contains "Assets/SodaSpawn.cs" "private void PruneMissingSodas ()" \
+  "SodaSpawn must keep missing spawned-object pruning in a reusable helper."
+require_contains "Assets/SodaSpawn.cs" "for (int i = sodas.Count - 1; i >= 0; i--)" \
+  "SodaSpawn must prune missing spawned-object references safely from the end of the list."
+require_contains "Assets/SodaSpawn.cs" "sodas.RemoveAt (i);" \
+  "SodaSpawn must remove missing spawned-object references from the tracked list."
+require_contains "Assets/SodaSpawn.cs" "PruneMissingSodas ();" \
+  "SodaSpawn must prune missing spawned-object references before cap enforcement."
 require_contains "Assets/SodaSpawn.cs" "void OnDisable ()" \
   "SodaSpawn must clean up spawned cans when disabled."
 require_contains "Assets/SodaSpawn.cs" "ClearSodas ();" \
@@ -109,6 +119,8 @@ require_contains "README.md" "bounds spawn caps to the original 1000-can limit" 
   "README must document the SodaSpawn upper-cap guard."
 require_contains "README.md" "runtime cap repair" \
   "README must document the SodaSpawn runtime cap repair."
+require_contains "README.md" "prunes missing spawned-can references" \
+  "README must document the SodaSpawn missing-reference pruning guard."
 require_contains "README.md" "cleans up tracked cans when the spawner is disabled" \
   "README must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
@@ -117,6 +129,8 @@ require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
   "CHANGES must document the SodaSpawn runtime cap repair."
 require_contains "CHANGES.md" "above the original 1000-can cap" \
   "CHANGES must document the SodaSpawn upper-cap repair."
+require_contains "CHANGES.md" "missing spawned-can references" \
+  "CHANGES must document the SodaSpawn missing-reference pruning guard."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
@@ -125,6 +139,10 @@ require_contains "$UPPER_CAP_PLAN" "Status: Completed" \
   "Upper cap repair plan must record completed status."
 require_contains "$UPPER_CAP_PLAN" "make check" \
   "Upper cap repair plan must record make check verification."
+require_contains "$MISSING_REFERENCE_PLAN" "Status: Completed" \
+  "Missing-reference pruning plan must record completed status."
+require_contains "$MISSING_REFERENCE_PLAN" "make check" \
+  "Missing-reference pruning plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

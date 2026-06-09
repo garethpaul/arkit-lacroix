@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Pruned missing spawned-can references before `SodaSpawn` enforces the runtime
+  cap so externally destroyed cans do not count against the live cleanup limit.
 - Bounded `SodaSpawn.maxSodas` so values above the original 1000-can cap repair
   back to the default cleanup limit.
 - Added reusable `SodaSpawn.maxSodas` repair so invalid cap values are corrected
