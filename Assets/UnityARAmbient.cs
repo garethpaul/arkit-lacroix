@@ -12,14 +12,26 @@ namespace UnityEngine.XR.iOS
         public void Start()
         {
 #if !UNITY_EDITOR
-            l = GetComponent<Light>();
-			m_Session = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
+			EnsureAmbientDependencies ();
 #endif
         }
 #if !UNITY_EDITOR
+		private bool EnsureAmbientDependencies ()
+		{
+			if (l == null) {
+				l = GetComponent<Light>();
+			}
+
+			if (m_Session == null) {
+				m_Session = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
+			}
+
+			return l != null && m_Session != null;
+		}
+
         public void Update()
         {
-            if (l == null || m_Session == null) {
+            if (!EnsureAmbientDependencies ()) {
                 return;
             }
 

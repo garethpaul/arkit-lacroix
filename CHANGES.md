@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Refreshed `UnityARAmbient` ambient light dependency lookup during device
+  updates so late `Light` or AR session availability can recover.
 - Guarded `UnityARAmbient` device updates so a missing scene `Light` component
   or unavailable AR session does not throw during ambient intensity updates.
 - Added root `make lint`, `make test`, `make build`, and `make check` gates

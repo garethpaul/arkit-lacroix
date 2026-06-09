@@ -11,6 +11,7 @@ UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
 MAKE_GATE_PLAN="docs/plans/2026-06-09-unity-make-gate-targets.md"
 AMBIENT_GUARD_PLAN="docs/plans/2026-06-09-unity-ambient-light-null-guard.md"
+AMBIENT_DEPENDENCY_PLAN="docs/plans/2026-06-09-unity-ambient-light-dependency-refresh.md"
 
 require_file() {
   path=$1
@@ -41,6 +42,7 @@ for path in \
   "$MISSING_REFERENCE_PLAN" \
   "$MAKE_GATE_PLAN" \
   "$AMBIENT_GUARD_PLAN" \
+  "$AMBIENT_DEPENDENCY_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -84,8 +86,14 @@ require_contains "Assets/UnityARAmbient.cs" "GetComponent<Light>()" \
   "UnityARAmbient must read the scene Light component before applying ARKit intensity."
 require_contains "Assets/UnityARAmbient.cs" "UnityARSessionNativeInterface.GetARSessionNativeInterface" \
   "UnityARAmbient must read the ARKit session before applying ambient intensity."
-require_contains "Assets/UnityARAmbient.cs" "if (l == null || m_Session == null)" \
-  "UnityARAmbient must guard missing Light components or AR sessions before updating intensity."
+require_contains "Assets/UnityARAmbient.cs" "private bool EnsureAmbientDependencies ()" \
+  "UnityARAmbient must keep ambient dependency refresh in a reusable helper."
+require_contains "Assets/UnityARAmbient.cs" "if (l == null)" \
+  "UnityARAmbient must retry missing Light component lookup before updating intensity."
+require_contains "Assets/UnityARAmbient.cs" "if (m_Session == null)" \
+  "UnityARAmbient must retry missing AR session lookup before updating intensity."
+require_contains "Assets/UnityARAmbient.cs" "if (!EnsureAmbientDependencies ())" \
+  "UnityARAmbient must guard updates through the dependency refresh helper."
 require_contains "Assets/UnityARAmbient.cs" "GetARAmbientIntensity()" \
   "UnityARAmbient must keep using ARKit ambient intensity."
 require_contains "Assets/UnityARAmbient.cs" "l.intensity = newai / 1000.0f;" \
@@ -151,6 +159,8 @@ require_contains "README.md" "cleans up tracked cans when the spawner is disable
   "README must document the SodaSpawn disable cleanup."
 require_contains "README.md" "guards AR ambient light updates" \
   "README must document the UnityARAmbient null guard."
+require_contains "README.md" "refreshes missing AR ambient light dependencies" \
+  "README must document the UnityARAmbient dependency refresh guard."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -161,6 +171,8 @@ require_contains "CHANGES.md" "missing spawned-can references" \
   "CHANGES must document the SodaSpawn missing-reference pruning guard."
 require_contains "CHANGES.md" "UnityARAmbient" \
   "CHANGES must document the UnityARAmbient null guard."
+require_contains "CHANGES.md" "ambient light dependency lookup" \
+  "CHANGES must document the UnityARAmbient dependency refresh guard."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
@@ -177,6 +189,10 @@ require_contains "$AMBIENT_GUARD_PLAN" "Status: Completed" \
   "Ambient light null guard plan must record completed status."
 require_contains "$AMBIENT_GUARD_PLAN" "make check" \
   "Ambient light null guard plan must record make check verification."
+require_contains "$AMBIENT_DEPENDENCY_PLAN" "Status: Completed" \
+  "Ambient light dependency refresh plan must record completed status."
+require_contains "$AMBIENT_DEPENDENCY_PLAN" "make check" \
+  "Ambient light dependency refresh plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

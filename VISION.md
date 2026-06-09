@@ -23,6 +23,7 @@ Priority:
 - Keep spawn caps bounded to the original 1000-can cleanup limit
 - Keep spawned-can tracking aligned with live scene objects
 - Keep AR ambient light updates tolerant of missing scene components
+- Keep AR ambient light dependency lookup tolerant of late availability
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes
