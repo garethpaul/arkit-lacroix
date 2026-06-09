@@ -12,6 +12,7 @@ MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-
 MAKE_GATE_PLAN="docs/plans/2026-06-09-unity-make-gate-targets.md"
 AMBIENT_GUARD_PLAN="docs/plans/2026-06-09-unity-ambient-light-null-guard.md"
 AMBIENT_DEPENDENCY_PLAN="docs/plans/2026-06-09-unity-ambient-light-dependency-refresh.md"
+AMBIENT_VALUE_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md"
 
 require_file() {
   path=$1
@@ -43,6 +44,7 @@ for path in \
   "$MAKE_GATE_PLAN" \
   "$AMBIENT_GUARD_PLAN" \
   "$AMBIENT_DEPENDENCY_PLAN" \
+  "$AMBIENT_VALUE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -96,6 +98,16 @@ require_contains "Assets/UnityARAmbient.cs" "if (!EnsureAmbientDependencies ())"
   "UnityARAmbient must guard updates through the dependency refresh helper."
 require_contains "Assets/UnityARAmbient.cs" "GetARAmbientIntensity()" \
   "UnityARAmbient must keep using ARKit ambient intensity."
+require_contains "Assets/UnityARAmbient.cs" "private bool IsRenderableAmbientIntensity (float ambientIntensity)" \
+  "UnityARAmbient must isolate AR ambient intensity value validation."
+require_contains "Assets/UnityARAmbient.cs" "float.IsNaN (ambientIntensity)" \
+  "UnityARAmbient must reject NaN AR ambient intensity values."
+require_contains "Assets/UnityARAmbient.cs" "float.IsInfinity (ambientIntensity)" \
+  "UnityARAmbient must reject infinite AR ambient intensity values."
+require_contains "Assets/UnityARAmbient.cs" "ambientIntensity < 0.0f" \
+  "UnityARAmbient must reject negative AR ambient intensity values."
+require_contains "Assets/UnityARAmbient.cs" "if (!IsRenderableAmbientIntensity (newai))" \
+  "UnityARAmbient must guard intensity writes with value validation."
 require_contains "Assets/UnityARAmbient.cs" "l.intensity = newai / 1000.0f;" \
   "UnityARAmbient must keep the ARKit-to-Unity intensity conversion."
 require_contains "Assets/SodaSpawn.cs" "public int maxSodas = 1000;" \
@@ -161,6 +173,8 @@ require_contains "README.md" "guards AR ambient light updates" \
   "README must document the UnityARAmbient null guard."
 require_contains "README.md" "refreshes missing AR ambient light dependencies" \
   "README must document the UnityARAmbient dependency refresh guard."
+require_contains "README.md" "rejects non-finite or negative AR ambient intensity values" \
+  "README must document the UnityARAmbient value guard."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -173,6 +187,8 @@ require_contains "CHANGES.md" "UnityARAmbient" \
   "CHANGES must document the UnityARAmbient null guard."
 require_contains "CHANGES.md" "ambient light dependency lookup" \
   "CHANGES must document the UnityARAmbient dependency refresh guard."
+require_contains "CHANGES.md" "non-finite or negative AR ambient intensity" \
+  "CHANGES must document the UnityARAmbient value guard."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
@@ -193,6 +209,10 @@ require_contains "$AMBIENT_DEPENDENCY_PLAN" "Status: Completed" \
   "Ambient light dependency refresh plan must record completed status."
 require_contains "$AMBIENT_DEPENDENCY_PLAN" "make check" \
   "Ambient light dependency refresh plan must record make check verification."
+require_contains "$AMBIENT_VALUE_PLAN" "Status: Completed" \
+  "Ambient light value guard plan must record completed status."
+require_contains "$AMBIENT_VALUE_PLAN" "make check" \
+  "Ambient light value guard plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \

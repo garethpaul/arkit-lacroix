@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Guarded `UnityARAmbient` against non-finite or negative AR ambient intensity
+  values before writing scene light intensity.
 - Refreshed `UnityARAmbient` ambient light dependency lookup during device
   updates so late `Light` or AR session availability can recover.
 - Guarded `UnityARAmbient` device updates so a missing scene `Light` component

@@ -24,6 +24,7 @@ Priority:
 - Keep spawned-can tracking aligned with live scene objects
 - Keep AR ambient light updates tolerant of missing scene components
 - Keep AR ambient light dependency lookup tolerant of late availability
+- Keep AR ambient intensity writes guarded against invalid values
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes

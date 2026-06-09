@@ -84,6 +84,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   session is unavailable.
 - `UnityARAmbient` refreshes missing AR ambient light dependencies before each
   device update.
+- `UnityARAmbient` rejects non-finite or negative AR ambient intensity values
+  before writing to the scene `Light`.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
@@ -93,6 +95,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ambient light null guard.
 - See `docs/plans/2026-06-09-unity-ambient-light-dependency-refresh.md` for the
   AR ambient light dependency refresh guard.
+- See `docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md` for the AR
+  ambient intensity value guard.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 

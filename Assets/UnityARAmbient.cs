@@ -29,6 +29,17 @@ namespace UnityEngine.XR.iOS
 			return l != null && m_Session != null;
 		}
 
+		private bool IsRenderableAmbientIntensity (float ambientIntensity)
+		{
+			if (float.IsNaN (ambientIntensity) ||
+				float.IsInfinity (ambientIntensity) ||
+				ambientIntensity < 0.0f) {
+				return false;
+			}
+
+			return true;
+		}
+
         public void Update()
         {
             if (!EnsureAmbientDependencies ()) {
@@ -39,6 +50,10 @@ namespace UnityEngine.XR.iOS
             // ARKit ambient intensity ranges 0-2000
             // Unity ambient intensity ranges 0-8 (for over-bright lights)
             float newai = m_Session.GetARAmbientIntensity();
+            if (!IsRenderableAmbientIntensity (newai)) {
+                return;
+            }
+
             l.intensity = newai / 1000.0f;
         }
 #endif
