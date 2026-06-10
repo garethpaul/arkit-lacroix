@@ -1,5 +1,14 @@
 # Changes
 
+## 2026-06-10
+
+- Added a lightweight GitHub Actions workflow that runs `make check` for the
+  Unity ARKit source baseline.
+- Pinned the workflow's checkout action and limited its token to read-only
+  repository access with bounded execution.
+- Extended the SDK-free baseline to require the CI workflow and completed CI
+  plan.
+
 ## 2026-06-09
 
 - Guarded `UnityARAmbient` against AR ambient intensity values above Unity's

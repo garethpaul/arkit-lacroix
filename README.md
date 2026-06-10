@@ -12,6 +12,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `.github/workflows/check.yml` - GitHub Actions baseline for `make check`
 - `Assets` - source or example code
 - `docs` - source or example code
 - `ProjectSettings` - source or example code
@@ -59,6 +60,12 @@ scripts/check-baseline.sh
 
 Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in.
 
+GitHub Actions runs `make check` on pushes, pull requests, and manual
+dispatches. The workflow uses a commit-pinned checkout action, read-only
+repository access, and a bounded runtime. On hosted Linux runners without
+Unity, the SDK-free source baseline still runs and the Unity build step reports
+the required legacy editor.
+
 The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, and guards AR ambient light updates when scene components or AR sessions are unavailable.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -101,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ambient intensity value guard.
 - See `docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md` for the AR
   ambient intensity upper-bound guard.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the lightweight GitHub
+  Actions baseline.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 

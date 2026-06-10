@@ -14,6 +14,7 @@ AMBIENT_GUARD_PLAN="docs/plans/2026-06-09-unity-ambient-light-null-guard.md"
 AMBIENT_DEPENDENCY_PLAN="docs/plans/2026-06-09-unity-ambient-light-dependency-refresh.md"
 AMBIENT_VALUE_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md"
 AMBIENT_UPPER_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md"
+CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 
 require_file() {
   path=$1
@@ -36,6 +37,7 @@ require_contains() {
 
 for path in \
   "README.md" \
+  ".github/workflows/check.yml" \
   "CHANGES.md" \
   "docs/plans/2026-06-08-unity-arkit-scene-baseline.md" \
   "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
@@ -47,6 +49,7 @@ for path in \
   "$AMBIENT_DEPENDENCY_PLAN" \
   "$AMBIENT_VALUE_PLAN" \
   "$AMBIENT_UPPER_PLAN" \
+  "$CI_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -157,6 +160,8 @@ require_contains "README.md" "scripts/check-baseline.sh" \
   "README must document the baseline check."
 require_contains "README.md" "make check" \
   "README must document the make check wrapper."
+require_contains "README.md" "GitHub Actions" \
+  "README must document the GitHub Actions check."
 require_contains "README.md" "make lint" \
   "README must document the lint gate."
 require_contains "README.md" "make test" \
@@ -199,6 +204,18 @@ require_contains "CHANGES.md" "non-finite or negative AR ambient intensity" \
   "CHANGES must document the UnityARAmbient value guard."
 require_contains "CHANGES.md" "over-bright light range" \
   "CHANGES must document the UnityARAmbient upper-bound guard."
+require_contains ".github/workflows/check.yml" "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
+  "CI workflow must pin actions/checkout to the reviewed commit."
+require_contains ".github/workflows/check.yml" "permissions:" \
+  "CI workflow must declare token permissions."
+require_contains ".github/workflows/check.yml" "contents: read" \
+  "CI workflow must keep repository access read-only."
+require_contains ".github/workflows/check.yml" "workflow_dispatch:" \
+  "CI workflow must support manual verification."
+require_contains ".github/workflows/check.yml" "timeout-minutes: 5" \
+  "CI workflow must bound the baseline runtime."
+require_contains ".github/workflows/check.yml" "make check" \
+  "CI workflow must run make check."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \
@@ -227,6 +244,10 @@ require_contains "$AMBIENT_UPPER_PLAN" "Status: Completed" \
   "Ambient intensity upper-bound plan must record completed status."
 require_contains "$AMBIENT_UPPER_PLAN" "make check" \
   "Ambient intensity upper-bound plan must record make check verification."
+require_contains "$CI_PLAN" "Status: Completed" \
+  "CI baseline plan must record completed status."
+require_contains "$CI_PLAN" "make check" \
+  "CI baseline plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" "scripts/check-baseline.sh" \
