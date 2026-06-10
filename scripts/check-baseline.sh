@@ -15,6 +15,7 @@ AMBIENT_DEPENDENCY_PLAN="docs/plans/2026-06-09-unity-ambient-light-dependency-re
 AMBIENT_VALUE_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md"
 AMBIENT_UPPER_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md"
 CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
+PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
 
 require_file() {
   path=$1
@@ -50,6 +51,7 @@ for path in \
   "$AMBIENT_VALUE_PLAN" \
   "$AMBIENT_UPPER_PLAN" \
   "$CI_PLAN" \
+  "$PARTICLE_PAINTER_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -58,6 +60,8 @@ for path in \
   "Assets/SodaSpawn.cs.meta" \
   "Assets/UnityARAmbient.cs" \
   "Assets/UnityARAmbient.cs.meta" \
+  "Assets/ParticlePainter.cs" \
+  "Assets/ParticlePainter.cs.meta" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
   "Assets/Models/can4.obj" \
@@ -149,6 +153,27 @@ require_contains "Assets/SodaSpawn.cs" "void OnDisable ()" \
   "SodaSpawn must clean up spawned cans when disabled."
 require_contains "Assets/SodaSpawn.cs" "ClearSodas ();" \
   "SodaSpawn disable cleanup must reuse the tracked cleanup path."
+require_contains "Assets/ParticlePainter.cs" "if (painterParticlePrefab == null)" \
+  "ParticlePainter must reject a missing particle prefab before initialization."
+require_contains "Assets/ParticlePainter.cs" "if (colorPicker == null)" \
+  "ParticlePainter must reject a missing color picker before initialization."
+require_contains "Assets/ParticlePainter.cs" "private void SubscribeToEvents ()" \
+  "ParticlePainter must keep event registration in a reusable helper."
+require_contains "Assets/ParticlePainter.cs" "private void UnsubscribeFromEvents ()" \
+  "ParticlePainter must keep event teardown in a reusable helper."
+require_contains "Assets/ParticlePainter.cs" "UnityARSessionNativeInterface.ARFrameUpdatedEvent -= ARFrameUpdated;" \
+  "ParticlePainter must unsubscribe from global AR frame updates."
+require_contains "Assets/ParticlePainter.cs" "colorPicker.onValueChanged.RemoveListener (HandleColorChanged);" \
+  "ParticlePainter must remove its color picker listener during teardown."
+require_contains "Assets/ParticlePainter.cs" "if (!isInitialized || currentPaintVertices == null)" \
+  "ParticlePainter must ignore AR callbacks before successful initialization."
+require_contains "Assets/ParticlePainter.cs" "if (mainCamera == null)" \
+  "ParticlePainter must tolerate a missing tagged main camera."
+
+if grep -Fq "newColor =>" "$ROOT_DIR/Assets/ParticlePainter.cs"; then
+  printf '%s\n' "ParticlePainter must use a removable named color listener." >&2
+  exit 1
+fi
 require_contains ".gitignore" "/[Ll]ibrary/" "Unity Library directory must stay ignored."
 require_contains ".gitignore" "/[Tt]emp/" "Unity Temp directory must stay ignored."
 require_contains ".gitignore" "/[Oo]bj/" "Unity Obj directory must stay ignored."
@@ -188,6 +213,8 @@ require_contains "README.md" "rejects non-finite or negative AR ambient intensit
   "README must document the UnityARAmbient value guard."
 require_contains "README.md" "over-bright range before writing" \
   "README must document the UnityARAmbient upper-bound guard."
+require_contains "README.md" "unsubscribes from AR frame and color-picker events" \
+  "README must document the ParticlePainter lifecycle guard."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -204,6 +231,8 @@ require_contains "CHANGES.md" "non-finite or negative AR ambient intensity" \
   "CHANGES must document the UnityARAmbient value guard."
 require_contains "CHANGES.md" "over-bright light range" \
   "CHANGES must document the UnityARAmbient upper-bound guard."
+require_contains "CHANGES.md" "ParticlePainter" \
+  "CHANGES must document the ParticlePainter lifecycle guard."
 require_contains ".github/workflows/check.yml" "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
   "CI workflow must pin actions/checkout to the reviewed commit."
 require_contains ".github/workflows/check.yml" "permissions:" \
@@ -214,6 +243,10 @@ require_contains ".github/workflows/check.yml" "workflow_dispatch:" \
   "CI workflow must support manual verification."
 require_contains ".github/workflows/check.yml" "timeout-minutes: 5" \
   "CI workflow must bound the baseline runtime."
+require_contains ".github/workflows/check.yml" "runs-on: ubuntu-24.04" \
+  "CI workflow must use a stable hosted runner image."
+require_contains ".github/workflows/check.yml" "cancel-in-progress: true" \
+  "CI workflow must cancel superseded runs."
 require_contains ".github/workflows/check.yml" "make check" \
   "CI workflow must run make check."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
@@ -248,9 +281,15 @@ require_contains "$CI_PLAN" "Status: Completed" \
   "CI baseline plan must record completed status."
 require_contains "$CI_PLAN" "make check" \
   "CI baseline plan must record make check verification."
+require_contains "$PARTICLE_PAINTER_PLAN" "Status: Completed" \
+  "ParticlePainter lifecycle plan must record completed status."
+require_contains "$PARTICLE_PAINTER_PLAN" "make check" \
+  "ParticlePainter lifecycle plan must record make check verification."
 
 require_file "Makefile"
-require_contains "Makefile" "scripts/check-baseline.sh" \
+require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
+  "Makefile must resolve repository-root commands from its own location."
+require_contains "Makefile" '$(ROOT)scripts/check-baseline.sh' \
   "Makefile must run the SDK-free baseline check."
 require_contains "Makefile" "lint:" \
   "Makefile must expose a lint gate."

@@ -2,6 +2,12 @@
 
 ## 2026-06-10
 
+- Hardened `ParticlePainter` initialization against missing prefab and color
+  picker references, and guarded AR callbacks when the main camera is absent.
+- Added idempotent `ParticlePainter` event registration and teardown so disabled
+  or destroyed components no longer retain global AR frame or color listeners.
+- Made root Makefile checks location-independent and pinned CI to the stable
+  Ubuntu 24.04 runner image.
 - Added a lightweight GitHub Actions workflow that runs `make check` for the
   Unity ARKit source baseline.
 - Pinned the workflow's checkout action and limited its token to read-only

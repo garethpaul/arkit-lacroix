@@ -18,24 +18,99 @@ public class ParticlePainter : MonoBehaviour {
     private Color currentColor = Color.white;
     private List<ParticleSystem> paintSystems;
     private int paintMode = 0;  //0 = off, 1 = pick color, 2 = paint
+    private bool isInitialized = false;
+    private bool eventsSubscribed = false;
 
 	// Use this for initialization
 	void Start () {
-        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+        if (painterParticlePrefab == null) {
+            Debug.LogError ("ParticlePainter requires a painter particle prefab.");
+            enabled = false;
+            return;
+        }
+
+        if (colorPicker == null) {
+            Debug.LogError ("ParticlePainter requires a color picker.");
+            enabled = false;
+            return;
+        }
+
         currentPS = Instantiate (painterParticlePrefab);
+        if (currentPS == null) {
+            Debug.LogError ("ParticlePainter could not create its particle system.");
+            enabled = false;
+            return;
+        }
+
         currentPaintVertices = new List<Vector3> ();
         paintSystems = new List<ParticleSystem> ();
         frameUpdated = false;
-        colorPicker.onValueChanged.AddListener( newColor => currentColor = newColor);
+        isInitialized = true;
+        SubscribeToEvents ();
         colorPicker.gameObject.SetActive (false);
 	}
 
+    void OnEnable ()
+    {
+        if (isInitialized) {
+            SubscribeToEvents ();
+        }
+    }
+
+    void OnDisable ()
+    {
+        UnsubscribeFromEvents ();
+    }
+
+    void OnDestroy ()
+    {
+        UnsubscribeFromEvents ();
+    }
+
+    private void SubscribeToEvents ()
+    {
+        if (eventsSubscribed || colorPicker == null) {
+            return;
+        }
+
+        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+        colorPicker.onValueChanged.AddListener (HandleColorChanged);
+        eventsSubscribed = true;
+    }
+
+    private void UnsubscribeFromEvents ()
+    {
+        if (!eventsSubscribed) {
+            return;
+        }
+
+        UnityARSessionNativeInterface.ARFrameUpdatedEvent -= ARFrameUpdated;
+        if (colorPicker != null) {
+            colorPicker.onValueChanged.RemoveListener (HandleColorChanged);
+        }
+        eventsSubscribed = false;
+    }
+
+    private void HandleColorChanged (Color newColor)
+    {
+        currentColor = newColor;
+    }
+
     public void ARFrameUpdated(UnityARCamera camera)
     {
+        if (!isInitialized || currentPaintVertices == null) {
+            return;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera == null) {
+            return;
+        }
+
         Matrix4x4 matrix = new Matrix4x4();
         matrix.SetColumn(3, camera.worldTransform.column3);
       
-        Vector3 currentPositon = UnityARMatrixOps.GetPosition(matrix) + (Camera.main.transform.forward * penDistance);
+        Vector3 currentPositon = UnityARMatrixOps.GetPosition(matrix) + (mainCamera.transform.forward * penDistance);
         if (Vector3.Distance (currentPositon, previousPosition) > minDistanceThreshold) {
             if (paintMode == 2) currentPaintVertices.Add (currentPositon);
             frameUpdated = true;
@@ -45,6 +120,10 @@ public class ParticlePainter : MonoBehaviour {
 
     void OnGUI()
     {
+        if (!isInitialized) {
+            return;
+        }
+
         string modeString = paintMode == 0 ? "OFF" : (paintMode == 1 ? "PICK" : "PAINT");
         if (GUI.Button(new Rect(Screen.width -100.0f, 0.0f, 100.0f, 50.0f), modeString))
          {
@@ -58,6 +137,10 @@ public class ParticlePainter : MonoBehaviour {
 	
     void RestartPainting()
     {
+        if (!isInitialized || currentPS == null) {
+            return;
+        }
+
         paintSystems.Add (currentPS);
         currentPS = Instantiate (painterParticlePrefab);
         currentPaintVertices = new List<Vector3> ();
@@ -65,6 +148,10 @@ public class ParticlePainter : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
+        if (!isInitialized || currentPS == null || currentPaintVertices == null) {
+            return;
+        }
+
         if (frameUpdated && paintMode == 2) {
             if ( currentPaintVertices.Count > 0) {
                 int numParticles = currentPaintVertices.Count;
