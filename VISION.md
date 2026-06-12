@@ -22,6 +22,7 @@ Priority:
 - Keep `SodaSpawn` caps and cleanup behavior explicit in source
 - Keep spawn caps bounded to the original 1000-can cleanup limit
 - Keep spawned-can tracking aligned with live scene objects
+- Keep the spawn cap populated through bounded oldest-first eviction
 - Keep AR ambient light updates tolerant of missing scene components
 - Keep AR ambient light dependency lookup tolerant of late availability
 - Keep AR ambient intensity writes guarded against invalid values

@@ -9,6 +9,7 @@ README="$ROOT_DIR/README.md"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
+CAP_EVICTION_PLAN="docs/plans/2026-06-12-unity-sodaspawn-cap-eviction.md"
 MAKE_GATE_PLAN="docs/plans/2026-06-09-unity-make-gate-targets.md"
 AMBIENT_GUARD_PLAN="docs/plans/2026-06-09-unity-ambient-light-null-guard.md"
 AMBIENT_DEPENDENCY_PLAN="docs/plans/2026-06-09-unity-ambient-light-dependency-refresh.md"
@@ -45,6 +46,7 @@ for path in \
   "$RUNTIME_CAP_PLAN" \
   "$UPPER_CAP_PLAN" \
   "$MISSING_REFERENCE_PLAN" \
+  "$CAP_EVICTION_PLAN" \
   "$MAKE_GATE_PLAN" \
   "$AMBIENT_GUARD_PLAN" \
   "$AMBIENT_DEPENDENCY_PLAN" \
@@ -149,10 +151,25 @@ require_contains "Assets/SodaSpawn.cs" "sodas.RemoveAt (i);" \
   "SodaSpawn must remove missing spawned-object references from the tracked list."
 require_contains "Assets/SodaSpawn.cs" "PruneMissingSodas ();" \
   "SodaSpawn must prune missing spawned-object references before cap enforcement."
+require_contains "Assets/SodaSpawn.cs" "private void TrimSodasToLimit ()" \
+  "SodaSpawn must keep cap eviction in a reusable helper."
+require_contains "Assets/SodaSpawn.cs" "while (sodas.Count > maxSodas)" \
+  "SodaSpawn must evict only when the live count exceeds the configured cap."
+require_contains "Assets/SodaSpawn.cs" "GameObject oldestSoda = sodas [0];" \
+  "SodaSpawn must evict the oldest tracked can first."
+require_contains "Assets/SodaSpawn.cs" "sodas.RemoveAt (0);" \
+  "SodaSpawn must remove evicted cans from the tracked list."
+require_contains "Assets/SodaSpawn.cs" "TrimSodasToLimit ();" \
+  "SodaSpawn must enforce the live-object cap after each spawn."
 require_contains "Assets/SodaSpawn.cs" "void OnDisable ()" \
   "SodaSpawn must clean up spawned cans when disabled."
 require_contains "Assets/SodaSpawn.cs" "ClearSodas ();" \
   "SodaSpawn disable cleanup must reuse the tracked cleanup path."
+
+if grep -Fq "if (sodas.Count >= maxSodas)" "$ROOT_DIR/Assets/SodaSpawn.cs"; then
+  printf '%s\n' "SodaSpawn must not clear every live can when the cap is reached." >&2
+  exit 1
+fi
 require_contains "Assets/ParticlePainter.cs" "if (painterParticlePrefab == null)" \
   "ParticlePainter must reject a missing particle prefab before initialization."
 require_contains "Assets/ParticlePainter.cs" "if (colorPicker == null)" \
@@ -223,6 +240,8 @@ require_contains "CHANGES.md" "above the original 1000-can cap" \
   "CHANGES must document the SodaSpawn upper-cap repair."
 require_contains "CHANGES.md" "missing spawned-can references" \
   "CHANGES must document the SodaSpawn missing-reference pruning guard."
+require_contains "CHANGES.md" "oldest tracked can" \
+  "CHANGES must document SodaSpawn oldest-first cap eviction."
 require_contains "CHANGES.md" "UnityARAmbient" \
   "CHANGES must document the UnityARAmbient null guard."
 require_contains "CHANGES.md" "ambient light dependency lookup" \

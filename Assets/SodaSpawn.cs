@@ -36,13 +36,22 @@ public class SodaSpawn : MonoBehaviour {
 		}
 
 		sodas.Add (soda);
-		if (sodas.Count >= maxSodas) {
-			ClearSodas ();
-		}
+		TrimSodasToLimit ();
 	}
 
 	void OnDisable () {
 		ClearSodas ();
+	}
+
+	private void TrimSodasToLimit () {
+		while (sodas.Count > maxSodas) {
+			GameObject oldestSoda = sodas [0];
+			sodas.RemoveAt (0);
+
+			if (oldestSoda != null) {
+				Destroy (oldestSoda);
+			}
+		}
 	}
 
 	private void ClearSodas () {
