@@ -31,7 +31,7 @@ Priority:
 - Keep particle painting samples inside a repaired minimum/maximum movement window
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Keep the SDK-free `make check` baseline running in GitHub Actions
-- Keep pinned CodeQL coverage for Actions, Unity C#, and native plugin source
+- Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes
 

@@ -2,7 +2,8 @@
 
 ## 2026-06-12
 
-- Added pinned CodeQL analysis for Actions, Unity C#, and native source, and
+- Documented GitHub CodeQL default setup for Actions and Unity C#, rejected a
+  conflicting advanced workflow, recorded the native bridge analysis gap, and
   disabled checkout credential persistence in the existing Check workflow.
 - Repaired invalid particle-painting distance thresholds, anchored the first AR
   frame without painting, and rejected tracking jumps above the configured

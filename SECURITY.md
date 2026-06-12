@@ -44,9 +44,10 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
-CodeQL results cover GitHub Actions, Unity C#, and native C/C++ source. Triage
-findings without weakening the scene/source contracts or treating no-build
-analysis as a substitute for Unity 5.6.1p1 device verification.
+CodeQL default-setup results cover GitHub Actions and Unity C#. The
+Objective-C++ bridge is not covered by the successful default-setup jobs;
+triage findings and that native gap without weakening scene/source contracts
+or treating static analysis as a substitute for Unity 5.6.1p1 verification.
 
 ## Safe Research Guidelines
 
