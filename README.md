@@ -66,7 +66,7 @@ repository access, and a bounded runtime. On hosted Linux runners without
 Unity, the SDK-free source baseline still runs and the Unity build step reports
 the required legacy editor.
 
-The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive.
+The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -87,6 +87,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   the Unity inspector range and runtime repair helper.
 - `SodaSpawn` prunes missing spawned-can references before enforcing the cap so
   the tracked list reflects live spawned objects.
+- `SodaSpawn` evicts the oldest tracked can after a spawn exceeds `maxSodas`,
+  avoiding periodic full-scene cleanup while retaining the configured limit.
 - `UnityARAmbient` skips ARKit intensity writes when its scene `Light` or AR
   session is unavailable.
 - `UnityARAmbient` refreshes missing AR ambient light dependencies before each

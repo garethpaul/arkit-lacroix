@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-12
+
+- Replaced `SodaSpawn` cap-triggered full cleanup with oldest-first eviction so
+  the configured cap remains populated without periodic destruction bursts.
+- Extended the SDK-free baseline and maintenance notes for the oldest tracked can
+  eviction contract.
+
 ## 2026-06-10
 
 - Hardened `ParticlePainter` initialization against missing prefab and color
