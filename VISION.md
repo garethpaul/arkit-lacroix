@@ -28,6 +28,7 @@ Priority:
 - Keep AR ambient intensity writes guarded against invalid values
 - Keep AR ambient intensity bounded to Unity's over-bright range
 - Keep particle painting callbacks scoped to active, initialized components
+- Keep particle painting samples inside a repaired minimum/maximum movement window
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Avoid asset or plugin changes without explaining Unity version assumptions

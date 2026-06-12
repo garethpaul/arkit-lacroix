@@ -1,6 +1,6 @@
 # Unity Particle Painter Distance Guard
 
-Status: Planned
+Status: Completed
 
 ## Context
 
@@ -37,10 +37,15 @@ sampling window.
 
 ## Verification
 
-- `make check`
-- Static mutations for removed maximum-distance rejection and removed initial
-  anchor handling
-- `git diff --check`
+- Focused source ordering confirmed minimum rejection, anchor advancement,
+  maximum rejection, and accepted painting occur in the intended sequence.
+- `sh -n scripts/check-baseline.sh` passed.
+- `make lint`, `make test`, `make build`, `make verify`, and `make check`
+  passed through the SDK-free baseline; Unity execution reported its documented
+  unavailable-toolchain limitation.
+- Static mutations for removed maximum-distance rejection, removed initial
+  anchor handling, and removed threshold repair were rejected.
+- `git diff --check` passed.
 
 Unity is not installed on this host, so device-level AR relocalization behavior
 still requires validation in the pinned Unity/ARKit toolchain.

@@ -66,7 +66,7 @@ repository access, and a bounded runtime. On hosted Linux runners without
 Unity, the SDK-free source baseline still runs and the Unity build step reports
 the required legacy editor.
 
-The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive.
+The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive while bounding paint samples to the configured movement window.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -100,6 +100,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `ParticlePainter` validates required scene references before initialization,
   tolerates a missing main camera, and releases global AR frame and color-picker
   listeners when disabled or destroyed.
+- `ParticlePainter` repairs invalid distance thresholds, anchors the first valid
+  AR frame without painting, and advances past tracking jumps above the maximum
+  distance without adding a paint vertex.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.

@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.XR.iOS;
 
 public class ParticlePainter : MonoBehaviour {
+    private const float DefaultMinDistanceThreshold = 0.05f;
+    private const float DefaultMaxDistanceThreshold = 1.0f;
+
     public ParticleSystem painterParticlePrefab;
     public float minDistanceThreshold;
     public float maxDistanceThreshold;
@@ -13,16 +16,39 @@ public class ParticlePainter : MonoBehaviour {
     public ColorPicker colorPicker;
     private ParticleSystem currentPS;
     private ParticleSystem.Particle [] particles;
-    private Vector3 previousPosition = Vector3.zero;  //camera starts from origin
+    private Vector3 previousPosition = Vector3.zero;
     private List<Vector3> currentPaintVertices;
     private Color currentColor = Color.white;
     private List<ParticleSystem> paintSystems;
     private int paintMode = 0;  //0 = off, 1 = pick color, 2 = paint
     private bool isInitialized = false;
     private bool eventsSubscribed = false;
+    private bool hasPreviousPosition = false;
+
+    private bool IsValidDistanceThreshold (float value)
+    {
+        return !float.IsNaN (value) && !float.IsInfinity (value) && value > 0.0f;
+    }
+
+    private void RepairDistanceThresholds ()
+    {
+        if (!IsValidDistanceThreshold (minDistanceThreshold) ||
+            !IsValidDistanceThreshold (maxDistanceThreshold) ||
+            maxDistanceThreshold <= minDistanceThreshold) {
+            minDistanceThreshold = DefaultMinDistanceThreshold;
+            maxDistanceThreshold = DefaultMaxDistanceThreshold;
+        }
+    }
+
+    void OnValidate ()
+    {
+        RepairDistanceThresholds ();
+    }
 
 	// Use this for initialization
 	void Start () {
+        RepairDistanceThresholds ();
+
         if (painterParticlePrefab == null) {
             Debug.LogError ("ParticlePainter requires a painter particle prefab.");
             enabled = false;
@@ -110,12 +136,25 @@ public class ParticlePainter : MonoBehaviour {
         Matrix4x4 matrix = new Matrix4x4();
         matrix.SetColumn(3, camera.worldTransform.column3);
       
-        Vector3 currentPositon = UnityARMatrixOps.GetPosition(matrix) + (mainCamera.transform.forward * penDistance);
-        if (Vector3.Distance (currentPositon, previousPosition) > minDistanceThreshold) {
-            if (paintMode == 2) currentPaintVertices.Add (currentPositon);
-            frameUpdated = true;
-            previousPosition = currentPositon;
+        Vector3 currentPosition = UnityARMatrixOps.GetPosition(matrix) + (mainCamera.transform.forward * penDistance);
+        if (!hasPreviousPosition) {
+            previousPosition = currentPosition;
+            hasPreviousPosition = true;
+            return;
         }
+
+        float distance = Vector3.Distance (currentPosition, previousPosition);
+        if (distance < minDistanceThreshold) {
+            return;
+        }
+
+        previousPosition = currentPosition;
+        if (distance > maxDistanceThreshold) {
+            return;
+        }
+
+        if (paintMode == 2) currentPaintVertices.Add (currentPosition);
+        frameUpdated = true;
     }
 
     void OnGUI()

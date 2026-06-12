@@ -17,6 +17,7 @@ AMBIENT_VALUE_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-value-guard.md
 AMBIENT_UPPER_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md"
 CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
+PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
 
 require_file() {
   path=$1
@@ -54,6 +55,7 @@ for path in \
   "$AMBIENT_UPPER_PLAN" \
   "$CI_PLAN" \
   "$PARTICLE_PAINTER_PLAN" \
+  "$PARTICLE_DISTANCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -186,6 +188,30 @@ require_contains "Assets/ParticlePainter.cs" "if (!isInitialized || currentPaint
   "ParticlePainter must ignore AR callbacks before successful initialization."
 require_contains "Assets/ParticlePainter.cs" "if (mainCamera == null)" \
   "ParticlePainter must tolerate a missing tagged main camera."
+require_contains "Assets/ParticlePainter.cs" "DefaultMinDistanceThreshold = 0.05f" \
+  "ParticlePainter must preserve the scene's default minimum sample distance."
+require_contains "Assets/ParticlePainter.cs" "DefaultMaxDistanceThreshold = 1.0f" \
+  "ParticlePainter must preserve the scene's default maximum sample distance."
+require_contains "Assets/ParticlePainter.cs" "private void RepairDistanceThresholds ()" \
+  "ParticlePainter must centralize distance-threshold repair."
+require_contains "Assets/ParticlePainter.cs" "float.IsNaN (value)" \
+  "ParticlePainter must reject NaN distance thresholds."
+require_contains "Assets/ParticlePainter.cs" "float.IsInfinity (value)" \
+  "ParticlePainter must reject infinite distance thresholds."
+require_contains "Assets/ParticlePainter.cs" "maxDistanceThreshold <= minDistanceThreshold" \
+  "ParticlePainter must repair inverted distance thresholds."
+require_contains "Assets/ParticlePainter.cs" "void OnValidate ()" \
+  "ParticlePainter must repair distance thresholds during editor validation."
+require_contains "Assets/ParticlePainter.cs" "private bool hasPreviousPosition = false;" \
+  "ParticlePainter must track whether the first AR position has been anchored."
+require_contains "Assets/ParticlePainter.cs" "if (!hasPreviousPosition)" \
+  "ParticlePainter must anchor the first valid AR frame without painting."
+require_contains "Assets/ParticlePainter.cs" "if (distance < minDistanceThreshold)" \
+  "ParticlePainter must ignore movement below the minimum sample distance."
+require_contains "Assets/ParticlePainter.cs" "if (distance > maxDistanceThreshold)" \
+  "ParticlePainter must reject tracking jumps above the maximum sample distance."
+require_contains "Assets/ParticlePainter.cs" "previousPosition = currentPosition;" \
+  "ParticlePainter must advance its anchor for accepted samples and tracking jumps."
 
 if grep -Fq "newColor =>" "$ROOT_DIR/Assets/ParticlePainter.cs"; then
   printf '%s\n' "ParticlePainter must use a removable named color listener." >&2
@@ -232,6 +258,8 @@ require_contains "README.md" "over-bright range before writing" \
   "README must document the UnityARAmbient upper-bound guard."
 require_contains "README.md" "unsubscribes from AR frame and color-picker events" \
   "README must document the ParticlePainter lifecycle guard."
+require_contains "README.md" "bounding paint samples to the configured movement window" \
+  "README must document the ParticlePainter distance window."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -304,6 +332,10 @@ require_contains "$PARTICLE_PAINTER_PLAN" "Status: Completed" \
   "ParticlePainter lifecycle plan must record completed status."
 require_contains "$PARTICLE_PAINTER_PLAN" "make check" \
   "ParticlePainter lifecycle plan must record make check verification."
+require_contains "$PARTICLE_DISTANCE_PLAN" "Status: Completed" \
+  "ParticlePainter distance plan must record completed status."
+require_contains "$PARTICLE_DISTANCE_PLAN" "make check" \
+  "ParticlePainter distance plan must record make check verification."
 
 require_file "Makefile"
 require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \

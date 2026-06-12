@@ -32,6 +32,9 @@ Helpful reports include:
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - GitHub Actions runs the SDK-free `make check` baseline with a commit-pinned checkout action, read-only repository access, and a bounded runtime; review workflow, checker, and generated Unity metadata changes as part of the supply-chain surface.
+- `ParticlePainter` bounds accepted AR movement between repaired minimum and
+  maximum thresholds so relocalization jumps do not create unintended paint
+  geometry or unbounded spatial samples.
 
 ## Service and API Notes
 

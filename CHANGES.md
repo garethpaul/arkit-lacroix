@@ -2,6 +2,9 @@
 
 ## 2026-06-12
 
+- Repaired invalid particle-painting distance thresholds, anchored the first AR
+  frame without painting, and rejected tracking jumps above the configured
+  maximum while advancing the sampling anchor.
 - Replaced `SodaSpawn` cap-triggered full cleanup with oldest-first eviction so
   the configured cap remains populated without periodic destruction bursts.
 - Extended the SDK-free baseline and maintenance notes for the oldest tracked can
