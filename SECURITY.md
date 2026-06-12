@@ -44,6 +44,10 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
+CodeQL results cover GitHub Actions, Unity C#, and native C/C++ source. Triage
+findings without weakening the scene/source contracts or treating no-build
+analysis as a substitute for Unity 5.6.1p1 device verification.
+
 ## Safe Research Guidelines
 
 Good-faith research is welcome when it stays within these boundaries:

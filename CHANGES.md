@@ -2,6 +2,8 @@
 
 ## 2026-06-12
 
+- Added pinned CodeQL analysis for Actions, Unity C#, and native source, and
+  disabled checkout credential persistence in the existing Check workflow.
 - Repaired invalid particle-painting distance thresholds, anchored the first AR
   frame without painting, and rejected tracking jumps above the configured
   maximum while advancing the sampling anchor.

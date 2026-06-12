@@ -18,6 +18,9 @@ AMBIENT_UPPER_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md
 CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
 PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
+CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
+CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+CODEQL_WORKFLOW="$ROOT_DIR/.github/workflows/codeql.yml"
 
 require_file() {
   path=$1
@@ -41,6 +44,7 @@ require_contains() {
 for path in \
   "README.md" \
   ".github/workflows/check.yml" \
+  ".github/workflows/codeql.yml" \
   "CHANGES.md" \
   "docs/plans/2026-06-08-unity-arkit-scene-baseline.md" \
   "docs/plans/2026-06-08-unity-sodaspawn-disable-cleanup.md" \
@@ -56,6 +60,7 @@ for path in \
   "$CI_PLAN" \
   "$PARTICLE_PAINTER_PLAN" \
   "$PARTICLE_DISTANCE_PLAN" \
+  "$CODEQL_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -282,6 +287,8 @@ require_contains "CHANGES.md" "ParticlePainter" \
   "CHANGES must document the ParticlePainter lifecycle guard."
 require_contains ".github/workflows/check.yml" "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
   "CI workflow must pin actions/checkout to the reviewed commit."
+require_contains ".github/workflows/check.yml" "persist-credentials: false" \
+  "CI checkout must not persist repository credentials."
 require_contains ".github/workflows/check.yml" "permissions:" \
   "CI workflow must declare token permissions."
 require_contains ".github/workflows/check.yml" "contents: read" \
@@ -296,6 +303,73 @@ require_contains ".github/workflows/check.yml" "cancel-in-progress: true" \
   "CI workflow must cancel superseded runs."
 require_contains ".github/workflows/check.yml" "make check" \
   "CI workflow must run make check."
+
+workflow_paths=$(find "$ROOT_DIR/.github/workflows" -type f \( -name '*.yml' -o -name '*.yaml' \) -print | LC_ALL=C sort)
+expected_workflow_paths=$(printf '%s\n' "$CHECK_WORKFLOW" "$CODEQL_WORKFLOW" | LC_ALL=C sort)
+if [ "$workflow_paths" != "$expected_workflow_paths" ]; then
+  printf '%s\n' "Only the canonical Check and CodeQL workflows are allowed." >&2
+  exit 1
+fi
+
+if grep -E '^[[:space:]]*(-[[:space:]]+)?uses:' "$CHECK_WORKFLOW" "$CODEQL_WORKFLOW" | \
+   grep -Ev '@[0-9a-f]{40}([[:space:]]+#.*)?$' >/dev/null; then
+  printf '%s\n' "GitHub Actions must use immutable commit SHAs." >&2
+  exit 1
+fi
+
+for codeql_contract in \
+  "- master" \
+  "pull_request:" \
+  "schedule:" \
+  "cron: '37 5 * * 2'" \
+  "workflow_dispatch:" \
+  "contents: read" \
+  "security-events: write" \
+  "cancel-in-progress: true" \
+  "runs-on: ubuntu-24.04" \
+  "timeout-minutes: 10" \
+  "fail-fast: false" \
+  "language: [actions, csharp, c-cpp]" \
+  "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
+  "persist-credentials: false" \
+  "github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e" \
+  'languages: ${{ matrix.language }}' \
+  "build-mode: none" \
+  "github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e"; do
+  if ! grep -Fq -- "$codeql_contract" "$CODEQL_WORKFLOW"; then
+    printf '%s\n' "CodeQL workflow must keep contract: $codeql_contract" >&2
+    exit 1
+  fi
+done
+
+codeql_permissions=$(awk '
+  /^permissions:$/ { capture = 1; next }
+  capture && /^  [a-z-]+:/ { print; next }
+  capture { exit }
+' "$CODEQL_WORKFLOW")
+expected_codeql_permissions=$(printf '%s\n' '  contents: read' '  security-events: write')
+if [ "$codeql_permissions" != "$expected_codeql_permissions" ] || \
+   grep -Eq 'continue-on-error:[[:space:]]*true|if:[[:space:]]*false|run:' "$CODEQL_WORKFLOW"; then
+  printf '%s\n' "CodeQL must keep exact permissions and the reviewed action-only pipeline." >&2
+  exit 1
+fi
+
+require_contains "$CODEQL_PLAN" "status: completed" \
+  "CodeQL plan must record completed status."
+require_contains "$CODEQL_PLAN" "make check" \
+  "CodeQL plan must record make check verification."
+require_contains "$CODEQL_PLAN" "external working directory" \
+  "CodeQL plan must record location-independent verification."
+require_contains "$CODEQL_PLAN" "hostile mutations rejected" \
+  "CodeQL plan must record negative contract verification."
+require_contains "README.md" "CodeQL analyzes" \
+  "README must document CodeQL coverage."
+require_contains "SECURITY.md" "CodeQL results" \
+  "SECURITY must document CodeQL triage."
+require_contains "VISION.md" "CodeQL coverage" \
+  "VISION must preserve CodeQL coverage."
+require_contains "CHANGES.md" "CodeQL analysis" \
+  "CHANGES must record CodeQL analysis."
 require_contains "$RUNTIME_CAP_PLAN" "Status: Completed" \
   "Runtime cap repair plan must record completed status."
 require_contains "$RUNTIME_CAP_PLAN" "make check" \

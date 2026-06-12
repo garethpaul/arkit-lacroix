@@ -65,6 +65,9 @@ dispatches. The workflow uses a commit-pinned checkout action, read-only
 repository access, and a bounded runtime. On hosted Linux runners without
 Unity, the SDK-free source baseline still runs and the Unity build step reports
 the required legacy editor.
+CodeQL analyzes GitHub Actions, Unity C#, and native C/C++/Objective-C++ source
+with pinned no-build jobs, so static analysis remains available without the
+legacy Unity editor.
 
 The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive while bounding paint samples to the configured movement window.
 
