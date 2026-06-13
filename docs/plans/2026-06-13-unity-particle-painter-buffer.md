@@ -1,13 +1,13 @@
 ---
 title: Unity Particle Painter Buffer Bound
 type: performance
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
 # Unity Particle Painter Buffer Bound
 
-## Status: Planned
+## Status: Completed
 
 ## Problem Frame
 
@@ -75,11 +75,15 @@ Approach:
   reuse so the static gate proves that each contract is necessary.
 - Record the runtime-toolchain limitation without claiming Unity execution.
 
-## Verification Plan
+## Verification
 
-- Run `make check` from the repository and by absolute path from `/tmp`.
-- Run `sh -n scripts/check-baseline.sh` and `git diff --check`.
-- Run isolated hostile mutations against each new source and documentation
-  contract and require every mutation to fail the checker.
-- Record Unity editor, Xcode export, and ARKit device verification as unavailable
-  rather than inferred.
+- `make check` passed the SDK-free scene/source baseline, lint wrapper, test
+  wrapper, and build wrapper.
+- Absolute-path `make check` passed from `/tmp`.
+- `sh -n scripts/check-baseline.sh` and `git diff --check` passed.
+- Ten isolated hostile mutations were rejected across the default cap,
+  inspector range, upper-bound repair, buffer resize condition, repaired
+  allocation size, runtime trim, bounded append, populated-prefix submission,
+  per-frame allocation regression, and README evidence.
+- Unity 5.6.1p1 is not installed, no automated Unity editor runner is checked
+  in, and no claim is made for editor, Xcode export, or ARKit device execution.

@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Bounded `ParticlePainter` to 10,000 retained samples per stroke and reused the
+  active particle buffer instead of reallocating the full stroke every update.
 - Replaced per-frame can creation with a repaired, inspector-configurable
   0.05-5 second cadence and a 0.1-second default.
 - Scheduled from the current frame time so delayed frames do not trigger

@@ -6,6 +6,7 @@ using UnityEngine.XR.iOS;
 public class ParticlePainter : MonoBehaviour {
     private const float DefaultMinDistanceThreshold = 0.05f;
     private const float DefaultMaxDistanceThreshold = 1.0f;
+    private const int DefaultMaxPaintVertices = 10000;
 
     public ParticleSystem painterParticlePrefab;
     public float minDistanceThreshold;
@@ -13,6 +14,8 @@ public class ParticlePainter : MonoBehaviour {
     private bool frameUpdated = false;
     public float particleSize = .1f;
     public float penDistance = 0.2f;
+    [Range (1, DefaultMaxPaintVertices)]
+    public int maxPaintVertices = DefaultMaxPaintVertices;
     public ColorPicker colorPicker;
     private ParticleSystem currentPS;
     private ParticleSystem.Particle [] particles;
@@ -40,14 +43,42 @@ public class ParticlePainter : MonoBehaviour {
         }
     }
 
+    private void RepairMaxPaintVertices ()
+    {
+        if (maxPaintVertices < 1 || maxPaintVertices > DefaultMaxPaintVertices) {
+            maxPaintVertices = DefaultMaxPaintVertices;
+        }
+    }
+
+    private void EnsureParticleBuffer ()
+    {
+        if (particles == null || particles.Length != maxPaintVertices) {
+            particles = new ParticleSystem.Particle[maxPaintVertices];
+        }
+    }
+
+    private void TrimCurrentPaintVerticesToLimit ()
+    {
+        if (currentPaintVertices.Count <= maxPaintVertices) {
+            return;
+        }
+
+        currentPaintVertices.RemoveRange (
+            maxPaintVertices,
+            currentPaintVertices.Count - maxPaintVertices);
+        frameUpdated = true;
+    }
+
     void OnValidate ()
     {
         RepairDistanceThresholds ();
+        RepairMaxPaintVertices ();
     }
 
 	// Use this for initialization
 	void Start () {
         RepairDistanceThresholds ();
+        RepairMaxPaintVertices ();
 
         if (painterParticlePrefab == null) {
             Debug.LogError ("ParticlePainter requires a painter particle prefab.");
@@ -69,6 +100,7 @@ public class ParticlePainter : MonoBehaviour {
         }
 
         currentPaintVertices = new List<Vector3> ();
+        EnsureParticleBuffer ();
         paintSystems = new List<ParticleSystem> ();
         frameUpdated = false;
         isInitialized = true;
@@ -153,8 +185,10 @@ public class ParticlePainter : MonoBehaviour {
             return;
         }
 
-        if (paintMode == 2) currentPaintVertices.Add (currentPosition);
-        frameUpdated = true;
+        if (paintMode == 2 && currentPaintVertices.Count < maxPaintVertices) {
+            currentPaintVertices.Add (currentPosition);
+            frameUpdated = true;
+        }
     }
 
     void OnGUI()
@@ -183,6 +217,7 @@ public class ParticlePainter : MonoBehaviour {
         paintSystems.Add (currentPS);
         currentPS = Instantiate (painterParticlePrefab);
         currentPaintVertices = new List<Vector3> ();
+        EnsureParticleBuffer ();
     }
 
 	// Update is called once per frame
@@ -191,10 +226,13 @@ public class ParticlePainter : MonoBehaviour {
             return;
         }
 
+        RepairMaxPaintVertices ();
+        TrimCurrentPaintVerticesToLimit ();
+        EnsureParticleBuffer ();
+
         if (frameUpdated && paintMode == 2) {
             if ( currentPaintVertices.Count > 0) {
                 int numParticles = currentPaintVertices.Count;
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
                 int index = 0;
                 foreach (Vector3 currentPoint in currentPaintVertices) {     
                     particles [index].position = currentPoint;
@@ -204,7 +242,6 @@ public class ParticlePainter : MonoBehaviour {
                 }
                 currentPS.SetParticles (particles, numParticles);
             } else {
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[1];
                 particles [0].startSize = 0.0f;
                 currentPS.SetParticles (particles, 1);
             }

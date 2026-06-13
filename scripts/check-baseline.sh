@@ -7,6 +7,7 @@ BUILD_SETTINGS="$ROOT_DIR/ProjectSettings/EditorBuildSettings.asset"
 GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
 SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
+PARTICLE_PAINTER="$ROOT_DIR/Assets/ParticlePainter.cs"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
@@ -19,6 +20,7 @@ AMBIENT_UPPER_PLAN="docs/plans/2026-06-09-unity-ambient-intensity-upper-bound.md
 CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
 PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
+PARTICLE_BUFFER_PLAN="docs/plans/2026-06-13-unity-particle-painter-buffer.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -60,6 +62,7 @@ for path in \
   "$CI_PLAN" \
   "$PARTICLE_PAINTER_PLAN" \
   "$PARTICLE_DISTANCE_PLAN" \
+  "$PARTICLE_BUFFER_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
@@ -278,6 +281,67 @@ require_contains "Assets/ParticlePainter.cs" "if (distance > maxDistanceThreshol
   "ParticlePainter must reject tracking jumps above the maximum sample distance."
 require_contains "Assets/ParticlePainter.cs" "previousPosition = currentPosition;" \
   "ParticlePainter must advance its anchor for accepted samples and tracking jumps."
+require_contains "Assets/ParticlePainter.cs" "private const int DefaultMaxPaintVertices = 10000;" \
+  "ParticlePainter must keep a bounded default sample count per stroke."
+require_contains "Assets/ParticlePainter.cs" "[Range (1, DefaultMaxPaintVertices)]" \
+  "ParticlePainter must expose the bounded stroke sample count in the inspector."
+require_contains "Assets/ParticlePainter.cs" "maxPaintVertices < 1 || maxPaintVertices > DefaultMaxPaintVertices" \
+  "ParticlePainter must repair unsafe stroke sample limits."
+require_contains "Assets/ParticlePainter.cs" "private void EnsureParticleBuffer ()" \
+  "ParticlePainter must centralize reusable particle-buffer allocation."
+require_contains "Assets/ParticlePainter.cs" "particles == null || particles.Length != maxPaintVertices" \
+  "ParticlePainter must resize the reusable buffer when the repaired limit changes."
+require_contains "Assets/ParticlePainter.cs" "particles = new ParticleSystem.Particle[maxPaintVertices];" \
+  "ParticlePainter must allocate its buffer from the repaired stroke limit."
+require_contains "Assets/ParticlePainter.cs" "private void TrimCurrentPaintVerticesToLimit ()" \
+  "ParticlePainter must safely trim a stroke when its runtime limit is lowered."
+require_contains "Assets/ParticlePainter.cs" "currentPaintVertices.Count < maxPaintVertices" \
+  "ParticlePainter must stop retaining samples at the repaired per-stroke limit."
+require_contains "Assets/ParticlePainter.cs" "currentPS.SetParticles (particles, numParticles);" \
+  "ParticlePainter must submit only the populated prefix of the reusable buffer."
+
+particle_on_validate_body=$(sed -n '/void OnValidate ()/,/^    }/p' "$PARTICLE_PAINTER")
+if ! printf '%s\n' "$particle_on_validate_body" | grep -Fq "RepairMaxPaintVertices ();"; then
+  printf '%s\n' "ParticlePainter must repair its stroke sample limit during editor validation." >&2
+  exit 1
+fi
+
+particle_start_body=$(sed -n '/void Start ()/,/^	}/p' "$PARTICLE_PAINTER")
+for start_contract in "RepairMaxPaintVertices ();" "EnsureParticleBuffer ();"; do
+  if ! printf '%s\n' "$particle_start_body" | grep -Fq "$start_contract"; then
+    printf '%s\n' "ParticlePainter startup must initialize its bounded buffer: $start_contract" >&2
+    exit 1
+  fi
+done
+
+particle_frame_body=$(sed -n '/public void ARFrameUpdated/,/^    }/p' "$PARTICLE_PAINTER")
+if ! printf '%s\n' "$particle_frame_body" | grep -Fq "currentPaintVertices.Count < maxPaintVertices"; then
+  printf '%s\n' "ParticlePainter AR sampling must enforce the per-stroke sample limit." >&2
+  exit 1
+fi
+
+particle_restart_body=$(sed -n '/void RestartPainting()/,/^    }/p' "$PARTICLE_PAINTER")
+if ! printf '%s\n' "$particle_restart_body" | grep -Fq "EnsureParticleBuffer ();"; then
+  printf '%s\n' "ParticlePainter must initialize the reusable buffer for each active stroke." >&2
+  exit 1
+fi
+
+particle_update_body=$(sed -n '/void Update ()/,/^	}/p' "$PARTICLE_PAINTER")
+for update_contract in \
+  "RepairMaxPaintVertices ();" \
+  "TrimCurrentPaintVerticesToLimit ();" \
+  "EnsureParticleBuffer ();" \
+  "currentPS.SetParticles (particles, numParticles);"; do
+  if ! printf '%s\n' "$particle_update_body" | grep -Fq "$update_contract"; then
+    printf '%s\n' "ParticlePainter update must maintain its bounded reusable buffer: $update_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq "new ParticleSystem.Particle[numParticles]" "$ROOT_DIR/Assets/ParticlePainter.cs"; then
+  printf '%s\n' "ParticlePainter must not allocate a full stroke buffer on every update." >&2
+  exit 1
+fi
 
 if grep -Fq "newColor =>" "$ROOT_DIR/Assets/ParticlePainter.cs"; then
   printf '%s\n' "ParticlePainter must use a removable named color listener." >&2
@@ -326,6 +390,10 @@ require_contains "README.md" "unsubscribes from AR frame and color-picker events
   "README must document the ParticlePainter lifecycle guard."
 require_contains "README.md" "bounding paint samples to the configured movement window" \
   "README must document the ParticlePainter distance window."
+require_contains "README.md" "bounds each paint stroke to 10,000 retained samples" \
+  "README must document the ParticlePainter stroke sample bound."
+require_contains "README.md" "reuses one particle buffer per active stroke" \
+  "README must document ParticlePainter buffer reuse."
 require_contains "CHANGES.md" "SodaSpawn.OnDisable" \
   "CHANGES must document the SodaSpawn disable cleanup."
 require_contains "CHANGES.md" "SodaSpawn.maxSodas" \
@@ -346,6 +414,8 @@ require_contains "CHANGES.md" "over-bright light range" \
   "CHANGES must document the UnityARAmbient upper-bound guard."
 require_contains "CHANGES.md" "ParticlePainter" \
   "CHANGES must document the ParticlePainter lifecycle guard."
+require_contains "CHANGES.md" "10,000 retained samples per stroke" \
+  "CHANGES must record the ParticlePainter stroke sample bound."
 require_contains ".github/workflows/check.yml" "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
   "CI workflow must pin actions/checkout to the reviewed commit."
 require_contains ".github/workflows/check.yml" "persist-credentials: false" \
@@ -442,6 +512,14 @@ require_contains "$PARTICLE_DISTANCE_PLAN" "Status: Completed" \
   "ParticlePainter distance plan must record completed status."
 require_contains "$PARTICLE_DISTANCE_PLAN" "make check" \
   "ParticlePainter distance plan must record make check verification."
+require_contains "$PARTICLE_BUFFER_PLAN" "Status: Completed" \
+  "ParticlePainter buffer plan must record completed status."
+require_contains "$PARTICLE_BUFFER_PLAN" "make check" \
+  "ParticlePainter buffer plan must record make check verification."
+require_contains "$PARTICLE_BUFFER_PLAN" "isolated hostile mutations were rejected" \
+  "ParticlePainter buffer plan must record negative contract verification."
+require_contains "$PARTICLE_BUFFER_PLAN" "no claim is made for editor, Xcode export, or ARKit device execution" \
+  "ParticlePainter buffer plan must record limited runtime verification."
 
 require_file "Makefile"
 require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \

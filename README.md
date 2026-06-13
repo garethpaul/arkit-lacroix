@@ -109,6 +109,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `ParticlePainter` repairs invalid distance thresholds, anchors the first valid
   AR frame without painting, and advances past tracking jumps above the maximum
   distance without adding a paint vertex.
+- `ParticlePainter` bounds each paint stroke to 10,000 retained samples and
+  reuses one particle buffer per active stroke instead of allocating a full
+  replacement buffer after every accepted AR frame.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.
@@ -127,6 +130,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Actions baseline.
 - See `docs/plans/2026-06-10-unity-particle-painter-lifecycle.md` for the
   particle painter dependency and event-lifecycle guard.
+- See `docs/plans/2026-06-13-unity-particle-painter-buffer.md` for the bounded
+  stroke sample and reusable particle-buffer contract.
 - See `docs/plans/2026-06-13-unity-sodaspawn-cadence.md` for the bounded,
   non-catch-up can spawn cadence.
 - See `VISION.md` for project direction and contribution guardrails.
