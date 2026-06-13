@@ -6,6 +6,7 @@ PROJECT_VERSION="$ROOT_DIR/ProjectSettings/ProjectVersion.txt"
 BUILD_SETTINGS="$ROOT_DIR/ProjectSettings/EditorBuildSettings.asset"
 GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
+SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
@@ -19,6 +20,7 @@ CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
 PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
+SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 require_file() {
@@ -59,6 +61,7 @@ for path in \
   "$PARTICLE_PAINTER_PLAN" \
   "$PARTICLE_DISTANCE_PLAN" \
   "$CODEQL_PLAN" \
+  "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -170,6 +173,66 @@ require_contains "Assets/SodaSpawn.cs" "void OnDisable ()" \
   "SodaSpawn must clean up spawned cans when disabled."
 require_contains "Assets/SodaSpawn.cs" "ClearSodas ();" \
   "SodaSpawn disable cleanup must reuse the tracked cleanup path."
+
+for cadence_contract in \
+  "private const float DefaultSpawnIntervalSeconds = 0.1f;" \
+  "private const float MinSpawnIntervalSeconds = 0.05f;" \
+  "private const float MaxSpawnIntervalSeconds = 5.0f;" \
+  "[Range (MinSpawnIntervalSeconds, MaxSpawnIntervalSeconds)]" \
+  "public float spawnIntervalSeconds = DefaultSpawnIntervalSeconds;" \
+  "private void RepairSpawnInterval ()" \
+  "float.IsNaN (spawnIntervalSeconds)" \
+  "float.IsInfinity (spawnIntervalSeconds)" \
+  "spawnIntervalSeconds < MinSpawnIntervalSeconds" \
+  "spawnIntervalSeconds > MaxSpawnIntervalSeconds"; do
+  require_contains "Assets/SodaSpawn.cs" "$cadence_contract" \
+    "SodaSpawn must keep the bounded spawn cadence contract: $cadence_contract"
+done
+
+on_enable_body=$(sed -n '/void OnEnable ()/,/^\t}/p' "$SODA_SPAWN")
+if ! printf '%s\n' "$on_enable_body" | grep -Fq "RepairSpawnInterval ();" || \
+   ! printf '%s\n' "$on_enable_body" | grep -Fq "nextSpawnTime = Time.time;"; then
+  printf '%s\n' "SodaSpawn must repair cadence and allow an immediate first spawn when enabled." >&2
+  exit 1
+fi
+
+update_body=$(sed -n '/void Update ()/,/^\t}/p' "$SODA_SPAWN")
+for update_contract in \
+  "RepairSpawnInterval ();" \
+  "float currentTime = Time.time;" \
+  "if (currentTime < nextSpawnTime)" \
+  "nextSpawnTime = currentTime + spawnIntervalSeconds;" \
+  "Instantiate (sodaObject"; do
+  if ! printf '%s\n' "$update_body" | grep -Fq "$update_contract"; then
+    printf '%s\n' "SodaSpawn update is missing cadence contract: $update_contract" >&2
+    exit 1
+  fi
+done
+
+cadence_gate_line=$(grep -nF "if (currentTime < nextSpawnTime)" "$SODA_SPAWN" | cut -d: -f1)
+cadence_schedule_line=$(grep -nF "nextSpawnTime = currentTime + spawnIntervalSeconds;" "$SODA_SPAWN" | cut -d: -f1)
+spawn_line=$(grep -nF "Instantiate (sodaObject" "$SODA_SPAWN" | cut -d: -f1)
+if [ -z "$cadence_gate_line" ] || [ -z "$cadence_schedule_line" ] || [ -z "$spawn_line" ] || \
+   [ "$cadence_gate_line" -ge "$cadence_schedule_line" ] || \
+   [ "$cadence_schedule_line" -ge "$spawn_line" ]; then
+  printf '%s\n' "SodaSpawn must gate and schedule the next interval before instantiation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "0.1-second default cadence" "$README" || \
+   ! grep -Fq "2026-06-13-unity-sodaspawn-cadence.md" "$README"; then
+  printf '%s\n' "README must document the bounded SodaSpawn cadence and plan." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$ROOT_DIR/$SPAWN_CADENCE_PLAN" || \
+   ! grep -Fq "## Status: Completed" "$ROOT_DIR/$SPAWN_CADENCE_PLAN" || \
+   ! grep -Fq "make check" "$ROOT_DIR/$SPAWN_CADENCE_PLAN" || \
+   ! grep -Fq "Ten isolated hostile mutations were rejected" "$ROOT_DIR/$SPAWN_CADENCE_PLAN" || \
+   ! grep -Fq "no claim is made for editor, Xcode export, or ARKit device execution" "$ROOT_DIR/$SPAWN_CADENCE_PLAN"; then
+  printf '%s\n' "SodaSpawn cadence plan must record completed status and limited verification." >&2
+  exit 1
+fi
 
 if grep -Fq "if (sodas.Count >= maxSodas)" "$ROOT_DIR/Assets/SodaSpawn.cs"; then
   printf '%s\n' "SodaSpawn must not clear every live can when the cap is reached." >&2

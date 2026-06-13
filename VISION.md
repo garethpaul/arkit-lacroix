@@ -23,6 +23,7 @@ Priority:
 - Keep spawn caps bounded to the original 1000-can cleanup limit
 - Keep spawned-can tracking aligned with live scene objects
 - Keep the spawn cap populated through bounded oldest-first eviction
+- Keep can creation on an explicit bounded cadence instead of device frame rate
 - Keep AR ambient light updates tolerant of missing scene components
 - Keep AR ambient light dependency lookup tolerant of late availability
 - Keep AR ambient intensity writes guarded against invalid values

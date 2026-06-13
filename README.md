@@ -93,6 +93,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   the tracked list reflects live spawned objects.
 - `SodaSpawn` evicts the oldest tracked can after a spawn exceeds `maxSodas`,
   avoiding periodic full-scene cleanup while retaining the configured limit.
+- `SodaSpawn` uses a repaired 0.1-second default cadence, bounded to 0.05-5
+  seconds, so can creation and steady-state eviction are not tied to frame rate.
 - `UnityARAmbient` skips ARKit intensity writes when its scene `Light` or AR
   session is unavailable.
 - `UnityARAmbient` refreshes missing AR ambient light dependencies before each
@@ -125,6 +127,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Actions baseline.
 - See `docs/plans/2026-06-10-unity-particle-painter-lifecycle.md` for the
   particle painter dependency and event-lifecycle guard.
+- See `docs/plans/2026-06-13-unity-sodaspawn-cadence.md` for the bounded,
+  non-catch-up can spawn cadence.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 

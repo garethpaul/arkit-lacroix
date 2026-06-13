@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-13
+
+- Replaced per-frame can creation with a repaired, inspector-configurable
+  0.05-5 second cadence and a 0.1-second default.
+- Scheduled from the current frame time so delayed frames do not trigger
+  catch-up spawn bursts.
+
 ## 2026-06-12
 
 - Documented GitHub CodeQL default setup for Actions and Unity C#, rejected a
