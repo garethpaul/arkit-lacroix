@@ -2,6 +2,7 @@
 
 ## 2026-06-13
 
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Bounded `ParticlePainter` to 10,000 retained samples per stroke and reused the
   active particle buffer instead of reallocating the full stroke every update.
 - Replaced per-frame can creation with a repaired, inspector-configurable

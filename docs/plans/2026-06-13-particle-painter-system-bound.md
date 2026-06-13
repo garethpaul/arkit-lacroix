@@ -1,6 +1,6 @@
 # Particle Painter System Bound
 
-Status: Planned
+Status: Completed
 
 ## Context
 
@@ -54,4 +54,13 @@ inspection without claiming Unity runtime coverage.
 
 ## Verification
 
-- Pending implementation.
+- Repository and external-working-directory `make check` passed the SDK-free
+  scene/source baseline and root lint, test, build, verify, and check wrappers.
+- Ten focused hostile mutations were rejected across limit/repair removal,
+  off-by-one ownership, eviction order/destruction, restart order, runtime
+  lowering, teardown, guidance, and plan-status regressions.
+- Shell syntax and `git diff --check` passed. Final exact diff, generated
+  artifact, conflict-marker, and credential-pattern inspection is performed
+  before commit.
+- No Unity 5.6.1p1 editor or compatible standalone C# compiler is available;
+  no claim is made for editor, Xcode export, or ARKit device execution.

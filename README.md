@@ -112,6 +112,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `ParticlePainter` bounds each paint stroke to 10,000 retained samples and
   reuses one particle buffer per active stroke instead of allocating a full
   replacement buffer after every accepted AR frame.
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.

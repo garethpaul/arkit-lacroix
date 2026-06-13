@@ -35,6 +35,7 @@ Helpful reports include:
 - `ParticlePainter` bounds accepted AR movement between repaired minimum and
   maximum thresholds so relocalization jumps do not create unintended paint
   geometry or unbounded spatial samples.
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 
 ## Service and API Notes
 

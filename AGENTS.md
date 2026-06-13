@@ -48,6 +48,7 @@
 - `UnityARAmbient` skips ARKit intensity writes when its scene `Light` or AR session is unavailable.
 - `UnityARAmbient` refreshes missing AR ambient light dependencies before each device update.
 - `UnityARAmbient` rejects non-finite or negative AR ambient intensity values before writing to the scene `Light`.
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 
 ## Agent workflow
 

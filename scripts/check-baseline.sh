@@ -21,6 +21,7 @@ CI_PLAN="docs/plans/2026-06-10-ci-baseline.md"
 PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md"
 PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
 PARTICLE_BUFFER_PLAN="docs/plans/2026-06-13-unity-particle-painter-buffer.md"
+PARTICLE_SYSTEM_PLAN="docs/plans/2026-06-13-particle-painter-system-bound.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -63,6 +64,7 @@ for path in \
   "$PARTICLE_PAINTER_PLAN" \
   "$PARTICLE_DISTANCE_PLAN" \
   "$PARTICLE_BUFFER_PLAN" \
+  "$PARTICLE_SYSTEM_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
@@ -299,6 +301,27 @@ require_contains "Assets/ParticlePainter.cs" "currentPaintVertices.Count < maxPa
   "ParticlePainter must stop retaining samples at the repaired per-stroke limit."
 require_contains "Assets/ParticlePainter.cs" "currentPS.SetParticles (particles, numParticles);" \
   "ParticlePainter must submit only the populated prefix of the reusable buffer."
+require_contains "Assets/ParticlePainter.cs" "private const int DefaultMaxPaintSystems = 32;" \
+  "ParticlePainter must keep a bounded default total paint-system count."
+require_contains "Assets/ParticlePainter.cs" "[Range (1, DefaultMaxPaintSystems)]" \
+  "ParticlePainter must expose the total paint-system bound in the inspector."
+require_contains "Assets/ParticlePainter.cs" "maxPaintSystems < 1 || maxPaintSystems > DefaultMaxPaintSystems" \
+  "ParticlePainter must repair unsafe paint-system limits."
+require_contains "Assets/ParticlePainter.cs" "while (paintSystems.Count >= maxPaintSystems)" \
+  "ParticlePainter must reserve one bounded slot for the active paint system."
+require_contains "Assets/ParticlePainter.cs" "ParticleSystem oldestPaintSystem = paintSystems [0];" \
+  "ParticlePainter must evict completed paint systems oldest first."
+require_contains "Assets/ParticlePainter.cs" "Destroy (oldestPaintSystem.gameObject);" \
+  "ParticlePainter must destroy evicted paint-system objects."
+require_contains "Assets/ParticlePainter.cs" "private void ClearPaintSystems ()" \
+  "ParticlePainter must centralize owned-system destruction."
+require_contains "Assets/ParticlePainter.cs" "Destroy (currentPS.gameObject);" \
+  "ParticlePainter must destroy its active system during teardown."
+if [ "$(grep -Fc "RepairMaxPaintSystems ();" "$PARTICLE_PAINTER")" -ne 4 ] || \
+   [ "$(grep -Fc "TrimPaintSystemsToLimit ();" "$PARTICLE_PAINTER")" -ne 2 ]; then
+  printf '%s\n' "ParticlePainter must repair at validation/start/restart/update and trim at restart/update." >&2
+  exit 1
+fi
 
 particle_on_validate_body=$(sed -n '/void OnValidate ()/,/^    }/p' "$PARTICLE_PAINTER")
 if ! printf '%s\n' "$particle_on_validate_body" | grep -Fq "RepairMaxPaintVertices ();"; then
@@ -323,6 +346,22 @@ fi
 particle_restart_body=$(sed -n '/void RestartPainting()/,/^    }/p' "$PARTICLE_PAINTER")
 if ! printf '%s\n' "$particle_restart_body" | grep -Fq "EnsureParticleBuffer ();"; then
   printf '%s\n' "ParticlePainter must initialize the reusable buffer for each active stroke." >&2
+  exit 1
+fi
+restart_add_line=$(printf '%s\n' "$particle_restart_body" | grep -nF "paintSystems.Add (currentPS);" | cut -d: -f1)
+restart_trim_line=$(printf '%s\n' "$particle_restart_body" | grep -nF "TrimPaintSystemsToLimit ();" | cut -d: -f1)
+restart_create_line=$(printf '%s\n' "$particle_restart_body" | grep -nF "currentPS = Instantiate (painterParticlePrefab);" | cut -d: -f1)
+if [ -z "$restart_add_line" ] || [ -z "$restart_trim_line" ] || \
+   [ -z "$restart_create_line" ] || [ "$restart_add_line" -ge "$restart_trim_line" ] || \
+   [ "$restart_trim_line" -ge "$restart_create_line" ]; then
+  printf '%s\n' "ParticlePainter must retain, trim, then create each replacement stroke in order." >&2
+  exit 1
+fi
+
+particle_destroy_body=$(sed -n '/void OnDestroy ()/,/^    }/p' "$PARTICLE_PAINTER")
+if ! printf '%s\n' "$particle_destroy_body" | grep -Fq "UnsubscribeFromEvents ();" || \
+   ! printf '%s\n' "$particle_destroy_body" | grep -Fq "ClearPaintSystems ();"; then
+  printf '%s\n' "ParticlePainter destruction must release events and all owned systems." >&2
   exit 1
 fi
 
@@ -520,6 +559,18 @@ require_contains "$PARTICLE_BUFFER_PLAN" "isolated hostile mutations were reject
   "ParticlePainter buffer plan must record negative contract verification."
 require_contains "$PARTICLE_BUFFER_PLAN" "no claim is made for editor, Xcode export, or ARKit device execution" \
   "ParticlePainter buffer plan must record limited runtime verification."
+require_contains "$PARTICLE_SYSTEM_PLAN" "Status: Completed" \
+  "ParticlePainter system-bound plan must record completed status."
+require_contains "$PARTICLE_SYSTEM_PLAN" "make check" \
+  "ParticlePainter system-bound plan must record make check verification."
+require_contains "$PARTICLE_SYSTEM_PLAN" "hostile mutations" \
+  "ParticlePainter system-bound plan must record negative contract verification."
+
+for painter_system_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$painter_system_doc" \
+    "ParticlePainter caps active and completed paint systems and releases owned systems on destruction." \
+    "$painter_system_doc must document the total paint-system ownership bound."
+done
 
 require_file "Makefile"
 require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
