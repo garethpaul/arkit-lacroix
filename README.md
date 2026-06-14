@@ -122,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 - UnityARVideo reuses its external texture pair and releases it on teardown.
+- UnityARVideo detaches and releases its command buffer when disabled or
+  destroyed, then recreates it only when rendering resumes.
 - See `docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md`
   for the Unity/ARKit device evidence matrix and runtime non-claims.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve

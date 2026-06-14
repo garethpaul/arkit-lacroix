@@ -40,6 +40,8 @@ Helpful reports include:
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 - UnityARVideo reuses its external texture pair and releases it on teardown.
+- UnityARVideo detaches and releases its command buffer on disable and destroy
+  so inactive camera components do not retain native rendering resources.
 
 ## Service and API Notes
 

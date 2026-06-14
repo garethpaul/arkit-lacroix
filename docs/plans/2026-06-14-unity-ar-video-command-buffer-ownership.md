@@ -1,6 +1,6 @@
 # Unity AR Video Command Buffer Ownership
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -59,12 +59,15 @@ destroy, independently of external texture ownership.
 
 ## Verification
 
-To be recorded after implementation:
-
-- Portable scene, source, workflow, documentation, and plan contracts.
-- Repository-root and external-directory `make check`.
-- Isolated disable, destroy, camera guard, release, reference-clear,
-  initialization-reset, documentation, and completed-plan mutations.
+- `sh -n scripts/check-baseline.sh` and the portable scene, source, workflow,
+  documentation, and plan contracts passed.
+- Repository-root and external-directory `make check` passed. Both truthfully
+  reported Unity `5.6.1p1`, Xcode export, and ARKit device execution as
+  unavailable rather than claiming runtime coverage.
+- Nine isolated mutations were rejected for disable cleanup, destroy cleanup,
+  camera/material initialization guarding, cleanup camera guarding,
+  command-buffer release, reference clearing, initialization-state reset,
+  documentation, and completed plan evidence.
 
 ## Scope Boundaries
 

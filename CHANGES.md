@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- UnityARVideo detaches and releases its command buffer on disable
+  and destroy while preserving re-enable initialization.
 - Added an exact-commit ARKit Lacroix device verification matrix for editor and
   Xcode export, camera permission, tracking, textures, ambient light, bounded
   scene ownership, interruption, long sessions, and privacy-safe evidence, with every runtime row explicitly unexecuted.

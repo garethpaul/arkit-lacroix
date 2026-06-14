@@ -29,6 +29,7 @@ PARTICLE_SYSTEM_PLAN="docs/plans/2026-06-13-particle-painter-system-bound.md"
 BALL_MAKER_PLAN="docs/plans/2026-06-14-unity-ball-maker-ownership-bound.md"
 BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
+VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-ownership.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -76,6 +77,7 @@ for path in \
   "$BALL_MAKER_PLAN" \
   "$BALL_MOVER_PLAN" \
   "$VIDEO_TEXTURE_PLAN" \
+  "$VIDEO_COMMAND_BUFFER_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
@@ -267,7 +269,7 @@ for video_texture_contract in \
 done
 if [ "$(grep -Fc "Texture2D.CreateExternalTexture" "$UNITY_AR_VIDEO")" -ne 2 ] || \
    [ "$(grep -Fc "UpdateVideoTextures(currentResolution, handles);" "$UNITY_AR_VIDEO")" -ne 1 ] || \
-   [ "$(grep -Fc "DestroyVideoTextures ();" "$UNITY_AR_VIDEO")" -ne 3 ]; then
+   [ "$(grep -Fc "DestroyVideoTextures ();" "$UNITY_AR_VIDEO")" -ne 2 ]; then
   printf '%s\n' "UnityARVideo must create one texture pair and share replacement/teardown cleanup." >&2
   exit 1
 fi
@@ -781,6 +783,62 @@ for video_texture_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; d
   require_contains "$video_texture_doc" \
     "UnityARVideo reuses its external texture pair and releases it on teardown." \
     "$video_texture_doc must document external texture ownership."
+done
+
+for video_command_buffer_contract in \
+  "private bool bCommandBufferInitialized;" \
+  "private bool InitializeCommandBuffer()" \
+  "if (videoCamera == null || m_ClearMaterial == null)" \
+  "return false;" \
+  "videoCamera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);" \
+  "return true;" \
+  "private void ReleaseCommandBuffer()" \
+  "Camera videoCamera = GetComponent<Camera>();" \
+  "if (videoCamera != null)" \
+  "videoCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);" \
+  "m_VideoCommandBuffer.Release();" \
+  "m_VideoCommandBuffer = null;" \
+  "bCommandBufferInitialized = false;" \
+  "void OnDisable()" \
+  "void OnDestroy()"; do
+  if ! grep -Fq "$video_command_buffer_contract" "$UNITY_AR_VIDEO"; then
+    printf '%s\n' "UnityARVideo command-buffer ownership is missing: $video_command_buffer_contract" >&2
+    exit 1
+  fi
+done
+if ! grep -Fq 'if (!bCommandBufferInitialized && !InitializeCommandBuffer ())' "$UNITY_AR_VIDEO"; then
+  printf '%s\n' "UnityARVideo device rendering must stop when command-buffer initialization fails." >&2
+  exit 1
+fi
+video_disable_scope=$(sed -n '/void OnDisable()/,/void OnDestroy()/p' "$UNITY_AR_VIDEO")
+video_destroy_scope=$(sed -n '/void OnDestroy()/,/private void DestroyVideoTextures()/p' "$UNITY_AR_VIDEO")
+if [ "$(printf '%s\n' "$video_disable_scope" | grep -Fc 'ReleaseCommandBuffer ();')" -ne 1 ] || \
+   [ "$(printf '%s\n' "$video_destroy_scope" | grep -Fc 'ReleaseCommandBuffer ();')" -ne 1 ] || \
+   [ "$(grep -Fc 'm_VideoCommandBuffer.Release();' "$UNITY_AR_VIDEO")" -ne 1 ]; then
+  printf '%s\n' "UnityARVideo must release command-buffer ownership exactly once through both lifecycle paths." >&2
+  exit 1
+fi
+release_buffer_scope=$(sed -n '/private void ReleaseCommandBuffer()/,/^\t\t}/p' "$UNITY_AR_VIDEO")
+remove_line=$(printf '%s\n' "$release_buffer_scope" | grep -nF 'videoCamera.RemoveCommandBuffer' | cut -d: -f1)
+release_line=$(printf '%s\n' "$release_buffer_scope" | grep -nF 'm_VideoCommandBuffer.Release();' | cut -d: -f1)
+clear_line=$(printf '%s\n' "$release_buffer_scope" | grep -nF 'm_VideoCommandBuffer = null;' | cut -d: -f1)
+reset_line=$(printf '%s\n' "$release_buffer_scope" | grep -nF 'bCommandBufferInitialized = false;' | tail -1 | cut -d: -f1)
+if [ -z "$remove_line" ] || [ -z "$release_line" ] || [ -z "$clear_line" ] || \
+   [ -z "$reset_line" ] || [ "$remove_line" -ge "$release_line" ] || \
+   [ "$release_line" -ge "$clear_line" ] || [ "$clear_line" -ge "$reset_line" ]; then
+  printf '%s\n' "UnityARVideo must detach, release, clear, and reset command-buffer ownership in order." >&2
+  exit 1
+fi
+for video_command_buffer_doc in README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! tr '\n' ' ' < "$ROOT_DIR/$video_command_buffer_doc" | tr -s '[:space:]' ' ' | \
+      grep -Fqi 'detaches and releases its command buffer'; then
+    printf '%s\n' "$video_command_buffer_doc must document command-buffer ownership cleanup." >&2
+    exit 1
+  fi
+done
+for video_command_buffer_plan_contract in "Status: Completed" "make check" "mutations"; do
+  require_contains "$VIDEO_COMMAND_BUFFER_PLAN" "$video_command_buffer_plan_contract" \
+    "UnityARVideo command-buffer plan must record completed verification."
 done
 
 for ball_maker_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
