@@ -116,6 +116,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.

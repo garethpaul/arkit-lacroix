@@ -35,6 +35,7 @@ Priority:
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately

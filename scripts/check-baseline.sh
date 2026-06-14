@@ -10,6 +10,7 @@ SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
 PARTICLE_PAINTER="$ROOT_DIR/Assets/ParticlePainter.cs"
 BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
 BALL_MOVER="$ROOT_DIR/Assets/Examples/BallMover.cs"
+UNITY_AR_VIDEO="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs"
 BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
@@ -27,6 +28,7 @@ PARTICLE_BUFFER_PLAN="docs/plans/2026-06-13-unity-particle-painter-buffer.md"
 PARTICLE_SYSTEM_PLAN="docs/plans/2026-06-13-particle-painter-system-bound.md"
 BALL_MAKER_PLAN="docs/plans/2026-06-14-unity-ball-maker-ownership-bound.md"
 BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
+VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -72,6 +74,7 @@ for path in \
   "$PARTICLE_SYSTEM_PLAN" \
   "$BALL_MAKER_PLAN" \
   "$BALL_MOVER_PLAN" \
+  "$VIDEO_TEXTURE_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
@@ -88,6 +91,7 @@ for path in \
   "Assets/Examples/BallMaker.cs.meta" \
   "Assets/Examples/BallMover.cs" \
   "Assets/Examples/BallMover.cs.meta" \
+  "Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs" \
   "Assets/UnityARBallz.unity" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
@@ -201,6 +205,28 @@ fi
 if [ "$(grep -Fc "ClearMoveBall ();" "$BALL_MOVER")" -ne 3 ] || \
    grep -Fq "Destroy(collBallGO);" "$BALL_MOVER"; then
   printf '%s\n' "BallMover replacement, disable, and gesture cleanup must share one owner path." >&2
+  exit 1
+fi
+
+for video_texture_contract in \
+  "private void UpdateVideoTextures(Resolution resolution, ARTextureHandles handles)" \
+  "_videoTextureY.width != resolution.width" \
+  "DestroyVideoTextures ();" \
+  "_videoTextureY.UpdateExternalTexture(handles.textureY);" \
+  "_videoTextureCbCr.UpdateExternalTexture(handles.textureCbCr);" \
+  "Destroy (_videoTextureY);" \
+  "Destroy (_videoTextureCbCr);" \
+  "_videoTextureY = null;" \
+  "_videoTextureCbCr = null;"; do
+  if ! grep -Fq "$video_texture_contract" "$UNITY_AR_VIDEO"; then
+    printf '%s\n' "UnityARVideo texture ownership is missing: $video_texture_contract" >&2
+    exit 1
+  fi
+done
+if [ "$(grep -Fc "Texture2D.CreateExternalTexture" "$UNITY_AR_VIDEO")" -ne 2 ] || \
+   [ "$(grep -Fc "UpdateVideoTextures(currentResolution, handles);" "$UNITY_AR_VIDEO")" -ne 1 ] || \
+   [ "$(grep -Fc "DestroyVideoTextures ();" "$UNITY_AR_VIDEO")" -ne 3 ]; then
+  printf '%s\n' "UnityARVideo must create one texture pair and share replacement/teardown cleanup." >&2
   exit 1
 fi
 ball_disable_scope=$(sed -n '/void OnDisable ()/,/private void TrimBallsToLimit ()/p' "$BALL_MAKER")
@@ -690,6 +716,12 @@ require_contains "$BALL_MOVER_PLAN" "make check" \
   "BallMover ownership plan must record make check verification."
 require_contains "$BALL_MOVER_PLAN" "hostile mutations" \
   "BallMover ownership plan must record negative contract verification."
+require_contains "$VIDEO_TEXTURE_PLAN" "Status: Completed" \
+  "UnityARVideo texture plan must record completed status."
+require_contains "$VIDEO_TEXTURE_PLAN" "make check" \
+  "UnityARVideo texture plan must record make check verification."
+require_contains "$VIDEO_TEXTURE_PLAN" "hostile mutations" \
+  "UnityARVideo texture plan must record negative contract verification."
 
 for painter_system_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$painter_system_doc" \
@@ -701,6 +733,12 @@ for ball_mover_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$ball_mover_doc" \
     "UnityARBallz BallMover releases its tracked object before replacement and when disabled." \
     "$ball_mover_doc must document BallMover ownership cleanup."
+done
+
+for video_texture_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$video_texture_doc" \
+    "UnityARVideo reuses its external texture pair and releases it on teardown." \
+    "$video_texture_doc must document external texture ownership."
 done
 
 for ball_maker_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do

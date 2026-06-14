@@ -3,6 +3,7 @@
 ## 2026-06-14
 
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
 - Bounded UnityARBallz BallMaker ownership with stale-reference pruning,
   oldest-first eviction, missing-prefab guards, and disable cleanup.
 

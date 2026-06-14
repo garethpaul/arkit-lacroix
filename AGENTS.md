@@ -52,6 +52,7 @@
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
 
 ## Agent workflow
 

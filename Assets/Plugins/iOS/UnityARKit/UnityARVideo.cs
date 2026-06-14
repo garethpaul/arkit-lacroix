@@ -38,6 +38,26 @@ namespace UnityEngine.XR.iOS
         void OnDestroy()
         {
             GetComponent<Camera>().RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+            DestroyVideoTextures ();
+        }
+
+        private void UpdateVideoTextures(Resolution resolution, ARTextureHandles handles)
+        {
+            if (_videoTextureY == null || _videoTextureCbCr == null ||
+                _videoTextureY.width != resolution.width || _videoTextureY.height != resolution.height) {
+                DestroyVideoTextures ();
+                _videoTextureY = Texture2D.CreateExternalTexture(resolution.width, resolution.height,
+                    TextureFormat.R8, false, false, handles.textureY);
+                _videoTextureCbCr = Texture2D.CreateExternalTexture(resolution.width, resolution.height,
+                    TextureFormat.RG16, false, false, handles.textureCbCr);
+                _videoTextureY.filterMode = FilterMode.Bilinear;
+                _videoTextureY.wrapMode = TextureWrapMode.Repeat;
+                _videoTextureCbCr.filterMode = FilterMode.Bilinear;
+                _videoTextureCbCr.wrapMode = TextureWrapMode.Repeat;
+            } else {
+                _videoTextureY.UpdateExternalTexture(handles.textureY);
+                _videoTextureCbCr.UpdateExternalTexture(handles.textureCbCr);
+            }
         }
 
         public void OnPreRender()
@@ -55,18 +75,7 @@ namespace UnityEngine.XR.iOS
             Resolution currentResolution = Screen.currentResolution;
 
             // Texture Y
-            _videoTextureY = Texture2D.CreateExternalTexture(currentResolution.width, currentResolution.height,
-                TextureFormat.R8, false, false, (System.IntPtr)handles.textureY);
-            _videoTextureY.filterMode = FilterMode.Bilinear;
-            _videoTextureY.wrapMode = TextureWrapMode.Repeat;
-            _videoTextureY.UpdateExternalTexture(handles.textureY);
-
-            // Texture CbCr
-            _videoTextureCbCr = Texture2D.CreateExternalTexture(currentResolution.width, currentResolution.height,
-                TextureFormat.RG16, false, false, (System.IntPtr)handles.textureCbCr);
-            _videoTextureCbCr.filterMode = FilterMode.Bilinear;
-            _videoTextureCbCr.wrapMode = TextureWrapMode.Repeat;
-            _videoTextureCbCr.UpdateExternalTexture(handles.textureCbCr);
+            UpdateVideoTextures(currentResolution, handles);
 
             m_ClearMaterial.SetTexture("_textureY", _videoTextureY);
             m_ClearMaterial.SetTexture("_textureCbCr", _videoTextureCbCr);
@@ -100,8 +109,21 @@ namespace UnityEngine.XR.iOS
         void OnDestroy()
         {
             GetComponent<Camera>().RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+            DestroyVideoTextures ();
         }
 
 #endif
+
+        private void DestroyVideoTextures()
+        {
+            if (_videoTextureY != null) {
+                Destroy (_videoTextureY);
+                _videoTextureY = null;
+            }
+            if (_videoTextureCbCr != null) {
+                Destroy (_videoTextureCbCr);
+                _videoTextureCbCr = null;
+            }
+        }
     }
 }
