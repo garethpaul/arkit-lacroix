@@ -9,6 +9,7 @@ README="$ROOT_DIR/README.md"
 SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
 PARTICLE_PAINTER="$ROOT_DIR/Assets/ParticlePainter.cs"
 BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
+BALL_MOVER="$ROOT_DIR/Assets/Examples/BallMover.cs"
 BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
@@ -25,6 +26,7 @@ PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-gu
 PARTICLE_BUFFER_PLAN="docs/plans/2026-06-13-unity-particle-painter-buffer.md"
 PARTICLE_SYSTEM_PLAN="docs/plans/2026-06-13-particle-painter-system-bound.md"
 BALL_MAKER_PLAN="docs/plans/2026-06-14-unity-ball-maker-ownership-bound.md"
+BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -69,6 +71,7 @@ for path in \
   "$PARTICLE_BUFFER_PLAN" \
   "$PARTICLE_SYSTEM_PLAN" \
   "$BALL_MAKER_PLAN" \
+  "$BALL_MOVER_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
@@ -83,6 +86,8 @@ for path in \
   "Assets/ParticlePainter.cs.meta" \
   "Assets/Examples/BallMaker.cs" \
   "Assets/Examples/BallMaker.cs.meta" \
+  "Assets/Examples/BallMover.cs" \
+  "Assets/Examples/BallMover.cs.meta" \
   "Assets/UnityARBallz.unity" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
@@ -160,6 +165,42 @@ if [ -z "$ball_prefab_guard_line" ] || [ -z "$ball_instantiate_line" ] || \
 fi
 if [ "$(grep -Fc "TrimBallsToLimit ();" "$BALL_MAKER")" -ne 2 ]; then
   printf '%s\n' "BallMaker must trim after creation and during runtime repair." >&2
+  exit 1
+fi
+
+for ball_mover_contract in \
+  "if (collBallPrefab == null)" \
+  "ClearMoveBall ();" \
+  "collBallGO = Instantiate (collBallPrefab" \
+  "void OnDisable ()" \
+  "private void ClearMoveBall ()" \
+  "if (collBallGO != null)" \
+  "Destroy (collBallGO);" \
+  "collBallGO = null;"; do
+  if ! grep -Fq "$ball_mover_contract" "$BALL_MOVER"; then
+    printf '%s\n' "BallMover ownership cleanup is missing: $ball_mover_contract" >&2
+    exit 1
+  fi
+done
+ball_mover_create_scope=$(sed -n '/void CreateMoveBall/,/void OnDisable ()/p' "$BALL_MOVER")
+ball_mover_guard_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "if (collBallPrefab == null)" | cut -d: -f1)
+ball_mover_clear_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "ClearMoveBall ();" | cut -d: -f1)
+ball_mover_instantiate_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "collBallGO = Instantiate" | cut -d: -f1)
+if [ -z "$ball_mover_guard_line" ] || [ -z "$ball_mover_clear_line" ] || \
+   [ -z "$ball_mover_instantiate_line" ] || \
+   [ "$ball_mover_guard_line" -ge "$ball_mover_clear_line" ] || \
+   [ "$ball_mover_clear_line" -ge "$ball_mover_instantiate_line" ]; then
+  printf '%s\n' "BallMover must guard, clear prior ownership, and instantiate in order." >&2
+  exit 1
+fi
+ball_mover_disable_scope=$(sed -n '/void OnDisable ()/,/private void ClearMoveBall ()/p' "$BALL_MOVER")
+if [ "$(printf '%s\n' "$ball_mover_disable_scope" | grep -Fc "ClearMoveBall ();")" -ne 1 ]; then
+  printf '%s\n' "BallMover disable lifecycle must release its tracked object." >&2
+  exit 1
+fi
+if [ "$(grep -Fc "ClearMoveBall ();" "$BALL_MOVER")" -ne 3 ] || \
+   grep -Fq "Destroy(collBallGO);" "$BALL_MOVER"; then
+  printf '%s\n' "BallMover replacement, disable, and gesture cleanup must share one owner path." >&2
   exit 1
 fi
 ball_disable_scope=$(sed -n '/void OnDisable ()/,/private void TrimBallsToLimit ()/p' "$BALL_MAKER")
@@ -643,11 +684,23 @@ require_contains "$BALL_MAKER_PLAN" "make check" \
   "BallMaker ownership plan must record make check verification."
 require_contains "$BALL_MAKER_PLAN" "hostile mutations" \
   "BallMaker ownership plan must record negative contract verification."
+require_contains "$BALL_MOVER_PLAN" "Status: Completed" \
+  "BallMover ownership plan must record completed status."
+require_contains "$BALL_MOVER_PLAN" "make check" \
+  "BallMover ownership plan must record make check verification."
+require_contains "$BALL_MOVER_PLAN" "hostile mutations" \
+  "BallMover ownership plan must record negative contract verification."
 
 for painter_system_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$painter_system_doc" \
     "ParticlePainter caps active and completed paint systems and releases owned systems on destruction." \
     "$painter_system_doc must document the total paint-system ownership bound."
+done
+
+for ball_mover_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$ball_mover_doc" \
+    "UnityARBallz BallMover releases its tracked object before replacement and when disabled." \
+    "$ball_mover_doc must document BallMover ownership cleanup."
 done
 
 for ball_maker_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do

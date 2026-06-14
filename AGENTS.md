@@ -51,6 +51,7 @@
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
+- UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 
 ## Agent workflow
 

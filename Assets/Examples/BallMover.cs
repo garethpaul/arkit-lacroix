@@ -15,7 +15,25 @@ public class BallMover : MonoBehaviour {
 
 	void CreateMoveBall( Vector3 explodePosition)
 	{
+		if (collBallPrefab == null) {
+			return;
+		}
+
+		ClearMoveBall ();
 		collBallGO = Instantiate (collBallPrefab, explodePosition, Quaternion.identity);
+	}
+
+	void OnDisable ()
+	{
+		ClearMoveBall ();
+	}
+
+	private void ClearMoveBall ()
+	{
+		if (collBallGO != null) {
+			Destroy (collBallGO);
+			collBallGO = null;
+		}
 	}
 	
 	// Update is called once per frame
@@ -57,8 +75,7 @@ public class BallMover : MonoBehaviour {
 					}
 				}
 			} else if (touch.phase != TouchPhase.Stationary) { //ended or cancelled
-				Destroy(collBallGO);
-				collBallGO = null;
+				ClearMoveBall ();
 
 			}
 		}
