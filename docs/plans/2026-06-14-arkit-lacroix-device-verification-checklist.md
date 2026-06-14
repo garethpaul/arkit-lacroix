@@ -1,6 +1,6 @@
 # ARKit Lacroix Device Verification Checklist
 
-Status: In Progress
+Status: Completed
 
 ## Problem
 
@@ -31,4 +31,9 @@ device evidence for the exact implementation commit.
 
 ## Verification
 
-- Pending implementation and bounded repository validation.
+- `sh -n scripts/check-baseline.sh` and the focused baseline checker passed.
+- `make check` passed from the repository and from an external working
+  directory for all portable contracts available in this Linux environment.
+- Twelve hostile mutations were rejected by the checklist's static contracts.
+- No Unity editor, Xcode export, iOS simulator, physical ARKit device, camera, or live AR scene scenario was executed;
+  every runtime matrix row remains `not run`.

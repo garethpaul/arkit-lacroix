@@ -41,6 +41,9 @@ Priority:
 - Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes
+- Keep exact-commit ARKit Lacroix device verification matrix evidence separate
+  from portable checks, with unexecuted Unity, Xcode, camera, and device rows
+  explicit
 
 Next priorities:
 
@@ -48,6 +51,8 @@ Next priorities:
 - Add manual verification steps for launching the AR scene
 - Clarify which assets are original, third-party, or replaceable
 - Modernize ARKit/plugin dependencies only in a dedicated pass
+- Execute the device verification matrix with privacy-safe camera, tracking,
+  resource-ownership, interruption, and long-session evidence
 
 Contribution rules:
 

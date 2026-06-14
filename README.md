@@ -60,6 +60,11 @@ scripts/check-baseline.sh
 
 Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in.
 
+Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit
+Unity/ARKit matrix. It covers editor and Xcode export, camera permission,
+tracking, video textures, ambient light, bounded spawning and painting,
+ownership cleanup, privacy-safe evidence, and explicit unexecuted rows.
+
 GitHub Actions runs `make check` on pushes, pull requests, and manual
 dispatches. The workflow uses a commit-pinned checkout action, read-only
 repository access, and a bounded runtime. On hosted Linux runners without
@@ -117,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 - UnityARVideo reuses its external texture pair and releases it on teardown.
+- See `docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md`
+  for the Unity/ARKit device evidence matrix and runtime non-claims.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.

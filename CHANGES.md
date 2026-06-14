@@ -2,6 +2,9 @@
 
 ## 2026-06-14
 
+- Added an exact-commit ARKit Lacroix device verification matrix for editor and
+  Xcode export, camera permission, tracking, textures, ambient light, bounded
+  scene ownership, interruption, long sessions, and privacy-safe evidence, with every runtime row explicitly unexecuted.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 - UnityARVideo reuses its external texture pair and releases it on teardown.
 - Bounded UnityARBallz BallMaker ownership with stale-reference pruning,

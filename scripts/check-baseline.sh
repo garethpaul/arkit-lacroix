@@ -31,6 +31,7 @@ BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
+DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 
 require_file() {
@@ -77,6 +78,8 @@ for path in \
   "$VIDEO_TEXTURE_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
+  "$DEVICE_VERIFICATION_PLAN" \
+  "DEVICE_VERIFICATION.md" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -98,6 +101,45 @@ for path in \
   "Assets/Models/can4.obj" \
   "Screenshots/demo01.png"; do
   require_file "$path"
+done
+
+for device_contract in \
+  'commit SHA and pull request' \
+  'Unity 5.6.1p1' \
+  'Xcode version' \
+  'Camera permission' \
+  'AR session tracking' \
+  'UnityARVideo texture pair' \
+  'Resolution change' \
+  'Ambient light updates' \
+  'Soda spawn cadence' \
+  'Soda ownership cap' \
+  'Particle painting' \
+  'BallMaker ownership' \
+  'BallMover replacement' \
+  'Long session' \
+  'Do not convert `not run` into passing evidence.' \
+  'device identifiers, camera captures, room imagery' \
+  'every Unity, Xcode, ARKit, camera, and device row as unexecuted'; do
+  require_contains "DEVICE_VERIFICATION.md" "$device_contract" \
+    "ARKit Lacroix device checklist must keep contract: $device_contract"
+done
+
+if ! grep -Fq 'DEVICE_VERIFICATION.md' "$README" || \
+   ! grep -Fq 'explicit unexecuted rows' "$README" || \
+   ! grep -Fq 'ARKit Lacroix device verification matrix' "$ROOT_DIR/VISION.md" || \
+   ! grep -Fq 'every runtime row explicitly unexecuted' "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' 'Repository guidance must document the unexecuted ARKit Lacroix device matrix.' >&2
+  exit 1
+fi
+
+for plan_contract in \
+  'Status: Completed' \
+  'make check' \
+  'hostile mutations' \
+  'No Unity editor, Xcode export, iOS simulator, physical ARKit device, camera, or live AR scene scenario was executed'; do
+  require_contains "$DEVICE_VERIFICATION_PLAN" "$plan_contract" \
+    "ARKit Lacroix device plan must keep completion evidence: $plan_contract"
 done
 
 require_contains "ProjectSettings/ProjectVersion.txt" "m_EditorVersion: 5.6.1p1" \
