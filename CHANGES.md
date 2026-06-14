@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- HexColorField removes its end-edit listener from the matching event during
+  teardown instead of removing an unrelated value-change listener.
 - UnityARVideo detaches and releases its command buffer on disable
   and destroy while preserving re-enable initialization.
 - Added an exact-commit ARKit Lacroix device verification matrix for editor and

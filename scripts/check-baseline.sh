@@ -11,6 +11,7 @@ PARTICLE_PAINTER="$ROOT_DIR/Assets/ParticlePainter.cs"
 BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
 BALL_MOVER="$ROOT_DIR/Assets/Examples/BallMover.cs"
 UNITY_AR_VIDEO="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs"
+HEX_COLOR_FIELD="$ROOT_DIR/Assets/HSVPicker/UI/HexColorField.cs"
 BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
@@ -30,6 +31,7 @@ BALL_MAKER_PLAN="docs/plans/2026-06-14-unity-ball-maker-ownership-bound.md"
 BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-ownership.md"
+HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -78,6 +80,7 @@ for path in \
   "$BALL_MOVER_PLAN" \
   "$VIDEO_TEXTURE_PLAN" \
   "$VIDEO_COMMAND_BUFFER_PLAN" \
+  "$HEX_LISTENER_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
@@ -97,6 +100,7 @@ for path in \
   "Assets/Examples/BallMover.cs" \
   "Assets/Examples/BallMover.cs.meta" \
   "Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs" \
+  "Assets/HSVPicker/UI/HexColorField.cs" \
   "Assets/UnityARBallz.unity" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
@@ -845,6 +849,31 @@ for ball_maker_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$ball_maker_doc" \
     "UnityARBallz BallMaker" \
     "$ball_maker_doc must document bounded BallMaker ownership."
+done
+
+require_contains "Assets/HSVPicker/UI/HexColorField.cs" \
+  "hexInputField.onEndEdit.AddListener(UpdateColor);" \
+  "HexColorField must register UpdateColor on the end-edit event."
+require_contains "Assets/HSVPicker/UI/HexColorField.cs" \
+  "hexInputField.onEndEdit.RemoveListener(UpdateColor);" \
+  "HexColorField must remove UpdateColor from the matching end-edit event."
+if grep -Fq "hexInputField.onValueChanged.RemoveListener(UpdateColor);" "$HEX_COLOR_FIELD"; then
+  printf '%s\n' "HexColorField must not remove its end-edit callback from onValueChanged." >&2
+  exit 1
+fi
+if [ "$(grep -Fc 'AddListener(UpdateColor);' "$HEX_COLOR_FIELD")" -ne 1 ] || \
+   [ "$(grep -Fc 'RemoveListener(UpdateColor);' "$HEX_COLOR_FIELD")" -ne 1 ]; then
+  printf '%s\n' "HexColorField must own exactly one matched UpdateColor listener pair." >&2
+  exit 1
+fi
+for hex_listener_doc in AGENTS.md CHANGES.md; do
+  require_contains "$hex_listener_doc" \
+    "HexColorField removes its end-edit listener from the matching event" \
+    "$hex_listener_doc must document matched HexColorField listener cleanup."
+done
+for hex_listener_plan_contract in "Status: Completed" "make check" "hostile mutations"; do
+  require_contains "$HEX_LISTENER_PLAN" "$hex_listener_plan_contract" \
+    "HexColorField listener cleanup plan must record completed verification."
 done
 
 require_file "Makefile"

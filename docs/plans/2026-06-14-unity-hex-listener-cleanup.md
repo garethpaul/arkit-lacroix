@@ -1,6 +1,6 @@
 # Unity Hex Listener Cleanup
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -41,3 +41,21 @@ through teardown and can retain or invoke a destroyed component.
   Unity project settings.
 - Unity editor, Xcode export, and ARKit device execution remain unavailable and
   unclaimed.
+
+## Completed Work
+
+- Corrected `HexColorField.OnDestroy` to remove `UpdateColor` from
+  `onEndEdit`, matching the registration performed in `Awake`.
+- Added fail-closed contracts for the exact add/remove pair, the absence of the
+  mismatched event, one listener pair, documentation, and completed evidence.
+- Recorded the listener ownership rule in contributor guidance and the
+  changelog.
+
+## Verification
+
+- Repository-root and external-directory `make check` both passed portable
+  scene, source, lifecycle, workflow, documentation, and plan contracts.
+- Four isolated hostile mutations were rejected for restoring the mismatched
+  event, removing listener cleanup, reverting plan status, or removing the
+  ownership documentation.
+- Unity editor, Xcode export, and ARKit device execution were not run.

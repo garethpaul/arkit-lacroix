@@ -53,6 +53,8 @@
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
 - UnityARVideo reuses its external texture pair and releases it on teardown.
+- HexColorField removes its end-edit listener from the matching event during
+  teardown so destroyed controls do not retain callbacks.
 
 ## Agent workflow
 
