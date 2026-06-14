@@ -113,6 +113,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   reuses one particle buffer per active stroke instead of allocating a full
   replacement buffer after every accepted AR frame.
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
+  oldest ownership first, and releases retained balls when disabled.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.

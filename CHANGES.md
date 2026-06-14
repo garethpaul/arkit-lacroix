@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-14
+
+- Bounded UnityARBallz BallMaker ownership with stale-reference pruning,
+  oldest-first eviction, missing-prefab guards, and disable cleanup.
+
 ## 2026-06-13
 
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.

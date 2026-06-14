@@ -32,6 +32,8 @@ Priority:
 - Keep particle painting samples inside a repaired minimum/maximum movement window
 - Keep each particle-painting stroke bounded and reuse its active particle buffer
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
+  oldest ownership first, and releases retained balls when disabled.
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately

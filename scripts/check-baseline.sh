@@ -8,6 +8,8 @@ GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
 SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
 PARTICLE_PAINTER="$ROOT_DIR/Assets/ParticlePainter.cs"
+BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
+BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
 MISSING_REFERENCE_PLAN="docs/plans/2026-06-09-unity-sodaspawn-missing-reference-prune.md"
@@ -22,6 +24,7 @@ PARTICLE_PAINTER_PLAN="docs/plans/2026-06-10-unity-particle-painter-lifecycle.md
 PARTICLE_DISTANCE_PLAN="docs/plans/2026-06-11-unity-particle-painter-distance-guard.md"
 PARTICLE_BUFFER_PLAN="docs/plans/2026-06-13-unity-particle-painter-buffer.md"
 PARTICLE_SYSTEM_PLAN="docs/plans/2026-06-13-particle-painter-system-bound.md"
+BALL_MAKER_PLAN="docs/plans/2026-06-14-unity-ball-maker-ownership-bound.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 CHECK_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
@@ -65,6 +68,7 @@ for path in \
   "$PARTICLE_DISTANCE_PLAN" \
   "$PARTICLE_BUFFER_PLAN" \
   "$PARTICLE_SYSTEM_PLAN" \
+  "$BALL_MAKER_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "ProjectSettings/ProjectVersion.txt" \
@@ -77,6 +81,9 @@ for path in \
   "Assets/UnityARAmbient.cs.meta" \
   "Assets/ParticlePainter.cs" \
   "Assets/ParticlePainter.cs.meta" \
+  "Assets/Examples/BallMaker.cs" \
+  "Assets/Examples/BallMaker.cs.meta" \
+  "Assets/UnityARBallz.unity" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
   "Assets/Models/can4.obj" \
@@ -108,6 +115,71 @@ require_contains "Assets/GameScene.unity" "guid: 5587c957048494a2f96db36e0995449
   "GameScene must reference UnityARAmbient."
 require_contains "Assets/GameScene.unity" "guid: 58d1050948cdd4bfeb2ee58ee3093988" \
   "GameScene must reference the LaCroix prefab."
+require_contains "Assets/Examples/BallMaker.cs.meta" "guid: e8d14a82591ec4fcabb481f075ffeb53" \
+  "BallMaker script GUID must remain stable for scene references."
+require_contains "Assets/UnityARBallz.unity" "guid: e8d14a82591ec4fcabb481f075ffeb53" \
+  "UnityARBallz must retain its BallMaker component."
+
+for ball_maker_contract in \
+  "private const int DefaultMaxBalls = 100;" \
+  "[Range (1, DefaultMaxBalls)]" \
+  "public int maxBalls = DefaultMaxBalls;" \
+  "private List<GameObject> balls = new List<GameObject> ();" \
+  "RepairMaxBalls ();" \
+  "if (ballPrefab == null)" \
+  "if (ballGO == null)" \
+  "balls.Add (ballGO);" \
+  "TrimBallsToLimit ();" \
+  "PruneMissingBalls ();" \
+  "void OnDisable ()" \
+  "ClearBalls ();" \
+  "while (balls.Count > maxBalls)" \
+  "GameObject oldestBall = balls [0];" \
+  "balls.RemoveAt (0);" \
+  "Destroy (oldestBall);" \
+  "for (int index = balls.Count - 1; index >= 0; index--)" \
+  "balls.RemoveAt (index);" \
+  "if (maxBalls < 1 || maxBalls > DefaultMaxBalls)"; do
+  if ! grep -Fq "$ball_maker_contract" "$BALL_MAKER"; then
+    printf '%s\n' "BallMaker ownership bound is missing: $ball_maker_contract" >&2
+    exit 1
+  fi
+done
+
+ball_prefab_guard_line=$(grep -nF "if (ballPrefab == null)" "$BALL_MAKER" | cut -d: -f1)
+ball_instantiate_line=$(grep -nF "GameObject ballGO = Instantiate" "$BALL_MAKER" | cut -d: -f1)
+ball_add_line=$(grep -nF "balls.Add (ballGO);" "$BALL_MAKER" | cut -d: -f1)
+ball_create_trim_line=$(grep -nF "TrimBallsToLimit ();" "$BALL_MAKER" | head -1 | cut -d: -f1)
+if [ -z "$ball_prefab_guard_line" ] || [ -z "$ball_instantiate_line" ] || \
+   [ -z "$ball_add_line" ] || [ -z "$ball_create_trim_line" ] || \
+   [ "$ball_prefab_guard_line" -ge "$ball_instantiate_line" ] || \
+   [ "$ball_instantiate_line" -ge "$ball_add_line" ] || \
+   [ "$ball_add_line" -ge "$ball_create_trim_line" ]; then
+  printf '%s\n' "BallMaker must guard, instantiate, retain, and trim in order." >&2
+  exit 1
+fi
+if [ "$(grep -Fc "TrimBallsToLimit ();" "$BALL_MAKER")" -ne 2 ]; then
+  printf '%s\n' "BallMaker must trim after creation and during runtime repair." >&2
+  exit 1
+fi
+ball_disable_scope=$(sed -n '/void OnDisable ()/,/private void TrimBallsToLimit ()/p' "$BALL_MAKER")
+if [ "$(printf '%s\n' "$ball_disable_scope" | grep -Fc "ClearBalls ();")" -ne 1 ]; then
+  printf '%s\n' "BallMaker disable lifecycle must release retained ball ownership." >&2
+  exit 1
+fi
+ball_update_scope=$(sed -n '/void Update ()/,/void OnDisable ()/p' "$BALL_MAKER")
+ball_repair_line=$(printf '%s\n' "$ball_update_scope" | grep -nF "RepairMaxBalls ();" | cut -d: -f1)
+ball_prune_line=$(printf '%s\n' "$ball_update_scope" | grep -nF "PruneMissingBalls ();" | cut -d: -f1)
+ball_runtime_trim_line=$(printf '%s\n' "$ball_update_scope" | grep -nF "TrimBallsToLimit ();" | cut -d: -f1)
+ball_touch_line=$(printf '%s\n' "$ball_update_scope" | grep -nF "if (Input.touchCount > 0 )" | cut -d: -f1)
+if [ -z "$ball_repair_line" ] || [ -z "$ball_prune_line" ] || \
+   [ -z "$ball_runtime_trim_line" ] || [ -z "$ball_touch_line" ] || \
+   [ "$ball_repair_line" -ge "$ball_prune_line" ] || \
+   [ "$ball_prune_line" -ge "$ball_runtime_trim_line" ] || \
+   [ "$ball_runtime_trim_line" -ge "$ball_touch_line" ]; then
+  printf '%s\n' "BallMaker must repair, prune, and trim before touch processing." >&2
+  exit 1
+fi
 require_contains "Assets/UnityARAmbient.cs" "GetComponent<Light>()" \
   "UnityARAmbient must read the scene Light component before applying ARKit intensity."
 require_contains "Assets/UnityARAmbient.cs" "UnityARSessionNativeInterface.GetARSessionNativeInterface" \
@@ -565,11 +637,23 @@ require_contains "$PARTICLE_SYSTEM_PLAN" "make check" \
   "ParticlePainter system-bound plan must record make check verification."
 require_contains "$PARTICLE_SYSTEM_PLAN" "hostile mutations" \
   "ParticlePainter system-bound plan must record negative contract verification."
+require_contains "$BALL_MAKER_PLAN" "Status: Completed" \
+  "BallMaker ownership plan must record completed status."
+require_contains "$BALL_MAKER_PLAN" "make check" \
+  "BallMaker ownership plan must record make check verification."
+require_contains "$BALL_MAKER_PLAN" "hostile mutations" \
+  "BallMaker ownership plan must record negative contract verification."
 
 for painter_system_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$painter_system_doc" \
     "ParticlePainter caps active and completed paint systems and releases owned systems on destruction." \
     "$painter_system_doc must document the total paint-system ownership bound."
+done
+
+for ball_maker_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$ball_maker_doc" \
+    "UnityARBallz BallMaker" \
+    "$ball_maker_doc must document bounded BallMaker ownership."
 done
 
 require_file "Makefile"

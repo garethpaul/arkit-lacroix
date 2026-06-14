@@ -1,6 +1,6 @@
 # Unity Ball Maker Ownership Bound
 
-Status: In Progress
+Status: Completed
 
 ## Problem
 
@@ -64,4 +64,14 @@ verification without claiming Unity or device execution.
 
 ## Verification
 
-- Pending implementation and bounded validation.
+- Root and external-directory `make check` passed the complete source, scene,
+  workflow, documentation, and plan contract gate; Unity 5.6.1p1 and an iOS
+  export host remain unavailable.
+- Eleven isolated hostile mutations were rejected for missing cap repair, prefab
+  or instantiate guards, retention, pruning, oldest-first eviction, disable
+  cleanup, scene linkage, documentation, and completed plan status.
+- Final verification covered exact diff, shell syntax, scene/meta preservation,
+  whitespace, conflict markers, credential-shaped additions, and generated
+  artifacts.
+- No claim is made for Unity editor, Xcode export, simulator, physical-device,
+  ARKit, physics, or long-duration interaction execution.
