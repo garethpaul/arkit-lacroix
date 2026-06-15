@@ -1,6 +1,6 @@
 # Reset Point-Cloud Frame State On Disable
 
-Status: Planned
+Status: Completed
 
 ## Summary
 
@@ -47,3 +47,15 @@ data from the previous enabled lifetime.
   environment, so runtime lifecycle behavior remains unexecuted.
 - PR stacking must retain the existing point-cloud lifecycle PR as the base;
   neither pull request may be merged or closed without owner authorization.
+
+## Verification Results
+
+- Repository and external-directory `make check` passed the portable Unity
+  source, lifecycle, documentation, and completed-plan contracts.
+- Six hostile mutations were rejected for the two disable-time resets, the
+  particle pending-frame flag, unsubscribe/reset ordering, documentation, and
+  completed-plan status.
+- POSIX shell syntax, exact-diff, whitespace, generated-artifact, conflict-marker,
+  and changed-line credential-pattern audits passed.
+- No Unity 5.6.1p1 editor, Xcode export, iOS simulator, physical ARKit device,
+  or live frame-timing scenario was executed.

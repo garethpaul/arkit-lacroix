@@ -29,16 +29,23 @@ public class PointCloudParticleExample : MonoBehaviour {
 	void OnDisable ()
 	{
 		UnsubscribeFromEvents ();
+		ClearFrameState ();
 	}
 
 	void OnDestroy ()
 	{
 		UnsubscribeFromEvents ();
+		ClearFrameState ();
 		if (currentPS != null) {
 			Destroy (currentPS.gameObject);
 			currentPS = null;
 		}
+	}
+
+	private void ClearFrameState ()
+	{
 		m_PointCloudData = null;
+		frameUpdated = false;
 	}
 
 	private void SubscribeToEvents ()

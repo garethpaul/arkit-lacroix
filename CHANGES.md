@@ -1,5 +1,9 @@
 # Changes
 
+- Cleared pending point-cloud frame state on disable so re-enabled components
+  wait for a frame from the new enabled lifetime.
+- Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+
 ## 2026-06-15
 
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.

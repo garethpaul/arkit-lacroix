@@ -35,6 +35,7 @@ VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-ownership.md"
 HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
 POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ownership.md"
+POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -84,6 +85,7 @@ for path in \
   "$VIDEO_TEXTURE_PLAN" \
   "$VIDEO_COMMAND_BUFFER_PLAN" \
   "$HEX_LISTENER_PLAN" \
+  "$POINT_CLOUD_DISABLE_RESET_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
@@ -907,7 +909,7 @@ for point_cloud_compact in "$point_cloud_particle_compact" "$unity_point_cloud_c
   if [ "$(printf '%s\n' "$point_cloud_compact" | grep -Fo 'SubscribeToEvents();' | wc -l | tr -d ' ')" -ne 2 ] || \
      [ "$(printf '%s\n' "$point_cloud_compact" | grep -Fo 'UnsubscribeFromEvents();' | wc -l | tr -d ' ')" -ne 2 ] || \
      ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnEnable(){if(isInitialized){SubscribeToEvents();}}' || \
-     ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnDisable(){UnsubscribeFromEvents();}' || \
+     ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnDisable(){UnsubscribeFromEvents();ClearFrameState();}' || \
      ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnDestroy(){UnsubscribeFromEvents();'; then
     printf '%s\n' "Point-cloud event helpers must run from startup/enable and disable/destruction." >&2
     exit 1
@@ -942,6 +944,46 @@ done
 for point_cloud_plan_contract in "Status: Completed" "make check" "hostile mutations" "Unity 5.6.1p1 editor"; do
   require_contains "$POINT_CLOUD_LIFECYCLE_PLAN" "$point_cloud_plan_contract" \
     "Point-cloud lifecycle plan must record completed verification."
+done
+
+for point_cloud_source in "$POINT_CLOUD_PARTICLE" "$UNITY_POINT_CLOUD"; do
+  if ! grep -Fq "ClearFrameState" "$point_cloud_source"; then
+    printf '%s\n' "$point_cloud_source must reset retained AR frame state." >&2
+    exit 1
+  fi
+
+  point_cloud_disable_body=$(sed -n '/OnDisable/,/^[[:space:]]*}/p' "$point_cloud_source")
+  unsubscribe_line=$(printf '%s\n' "$point_cloud_disable_body" | grep -nF "UnsubscribeFromEvents" | cut -d: -f1)
+  reset_line=$(printf '%s\n' "$point_cloud_disable_body" | grep -nF "ClearFrameState" | cut -d: -f1)
+  if [ -z "$unsubscribe_line" ] || [ -z "$reset_line" ] || [ "$unsubscribe_line" -ge "$reset_line" ]; then
+    printf '%s\n' "$point_cloud_source must unsubscribe before clearing disabled frame state." >&2
+    exit 1
+  fi
+done
+particle_frame_reset_body=$(sed -n '/private void ClearFrameState ()/,/^\t}/p' "$POINT_CLOUD_PARTICLE")
+for particle_frame_reset_contract in "m_PointCloudData = null;" "frameUpdated = false;"; do
+  if ! printf '%s\n' "$particle_frame_reset_body" | grep -Fq "$particle_frame_reset_contract"; then
+    printf '%s\n' "PointCloudParticleExample frame reset must keep: $particle_frame_reset_contract" >&2
+    exit 1
+  fi
+done
+unity_frame_reset_body=$(sed -n '/private void ClearFrameState()/,/^    }/p' "$UNITY_POINT_CLOUD")
+if ! printf '%s\n' "$unity_frame_reset_body" | grep -Fq "m_PointCloudData = null;"; then
+  printf '%s\n' "UnityPointCloudExample frame reset must clear retained frame data." >&2
+  exit 1
+fi
+for point_cloud_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$point_cloud_doc" \
+    "Point-cloud examples clear pending AR frame data when disabled" \
+    "$point_cloud_doc must document disabled point-cloud frame reset."
+done
+for point_cloud_reset_plan_contract in \
+  "Status: Completed" \
+  "make check" \
+  "hostile mutations" \
+  "No Unity 5.6.1p1 editor"; do
+  require_contains "$POINT_CLOUD_DISABLE_RESET_PLAN" "$point_cloud_reset_plan_contract" \
+    "Point-cloud disable reset plan must record completed verification."
 done
 
 require_file "Makefile"

@@ -37,11 +37,13 @@ public class UnityPointCloudExample : MonoBehaviour
     public void OnDisable()
     {
         UnsubscribeFromEvents ();
+        ClearFrameState ();
     }
 
     public void OnDestroy()
     {
         UnsubscribeFromEvents ();
+        ClearFrameState ();
         if (pointCloudObjects != null)
         {
             foreach (GameObject pointCloudObject in pointCloudObjects)
@@ -54,6 +56,10 @@ public class UnityPointCloudExample : MonoBehaviour
             pointCloudObjects.Clear ();
             pointCloudObjects = null;
         }
+    }
+
+    private void ClearFrameState()
+    {
         m_PointCloudData = null;
     }
 
