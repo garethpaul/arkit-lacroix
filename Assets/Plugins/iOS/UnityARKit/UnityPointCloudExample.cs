@@ -103,6 +103,13 @@ public class UnityPointCloudExample : MonoBehaviour
         eventsSubscribed = false;
     }
 
+    private static bool IsFinitePoint(Vector4 point)
+    {
+        return !float.IsNaN (point.x) && !float.IsInfinity (point.x) &&
+            !float.IsNaN (point.y) && !float.IsInfinity (point.y) &&
+            !float.IsNaN (point.z) && !float.IsInfinity (point.z);
+    }
+
     public void ARFrameUpdated(UnityARCamera camera)
     {
         m_PointCloudData = camera.pointCloudData;
@@ -123,12 +130,14 @@ public class UnityPointCloudExample : MonoBehaviour
                     continue;
                 }
 
-                bool pointIsVisible = count < displayedPointCount;
+                Vector4 pointData = count < displayedPointCount
+                    ? m_PointCloudData [count]
+                    : Vector4.zero;
+                bool pointIsVisible = count < displayedPointCount && IsFinitePoint (pointData);
                 point.SetActive (pointIsVisible);
                 if (pointIsVisible)
                 {
-                    Vector4 vert = m_PointCloudData [count];
-                    point.transform.position = new Vector3(vert.x, vert.y, vert.z);
+                    point.transform.position = new Vector3(pointData.x, pointData.y, pointData.z);
                 }
             }
         }

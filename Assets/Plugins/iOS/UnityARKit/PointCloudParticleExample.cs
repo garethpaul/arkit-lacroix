@@ -67,6 +67,20 @@ public class PointCloudParticleExample : MonoBehaviour {
 		UnityARSessionNativeInterface.ARFrameUpdatedEvent -= ARFrameUpdated;
 		eventsSubscribed = false;
 	}
+
+	private static bool IsFinitePoint (Vector3 point)
+	{
+		return !float.IsNaN (point.x) && !float.IsInfinity (point.x) &&
+			!float.IsNaN (point.y) && !float.IsInfinity (point.y) &&
+			!float.IsNaN (point.z) && !float.IsInfinity (point.z);
+	}
+
+	private void HidePointCloud ()
+	{
+		ParticleSystem.Particle[] particles = new ParticleSystem.Particle[1];
+		particles [0].startSize = 0.0f;
+		currentPS.SetParticles (particles, 1);
+	}
 	
     public void ARFrameUpdated(UnityARCamera camera)
     {
@@ -77,21 +91,28 @@ public class PointCloudParticleExample : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
         if (frameUpdated) {
-            if (m_PointCloudData != null && m_PointCloudData.Length > 0) {
-                int numParticles = Mathf.Min (m_PointCloudData.Length, maxPointsToShow);
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
-                for (int index = 0; index < numParticles; index++) {
-                    Vector3 currentPoint = m_PointCloudData [index];
-                    particles [index].position = currentPoint;
-                    particles [index].startColor = new Color (1.0f, 1.0f, 1.0f);
-                    particles [index].startSize = particleSize;
-                }
-                currentPS.SetParticles (particles, numParticles);
-            } else {
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[1];
-                particles [0].startSize = 0.0f;
-                currentPS.SetParticles (particles, 1);
-            }
+	            if (m_PointCloudData != null && m_PointCloudData.Length > 0) {
+	                int numParticles = Mathf.Min (m_PointCloudData.Length, maxPointsToShow);
+	                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
+				int validParticleCount = 0;
+	                for (int index = 0; index < numParticles; index++) {
+	                    Vector3 currentPoint = m_PointCloudData [index];
+					if (!IsFinitePoint (currentPoint)) {
+						continue;
+					}
+	                    particles [validParticleCount].position = currentPoint;
+	                    particles [validParticleCount].startColor = new Color (1.0f, 1.0f, 1.0f);
+	                    particles [validParticleCount].startSize = particleSize;
+					validParticleCount++;
+	                }
+				if (validParticleCount > 0) {
+					currentPS.SetParticles (particles, validParticleCount);
+				} else {
+					HidePointCloud ();
+				}
+	            } else {
+				HidePointCloud ();
+	            }
             frameUpdated = false;
         }
 	}

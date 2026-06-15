@@ -1,5 +1,7 @@
 # Changes
 
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+
 - Cleared pending point-cloud frame state on disable so re-enabled components
   wait for a frame from the new enabled lifetime.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.

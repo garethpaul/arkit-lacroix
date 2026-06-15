@@ -34,6 +34,7 @@ Priority:
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.

@@ -37,6 +37,7 @@ HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
 POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ownership.md"
 POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
 POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
+POINT_CLOUD_FINITE_PLAN="docs/plans/2026-06-15-unity-point-cloud-finite-coordinates.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -997,12 +998,50 @@ for point_cloud_visibility_contract in \
   "int displayedPointCount = m_PointCloudData == null" \
   "Math.Min (m_PointCloudData.Length, pointCloudObjects.Count)" \
   "for (int count = 0; count < pointCloudObjects.Count; count++)" \
-  "bool pointIsVisible = count < displayedPointCount;" \
+  "bool pointIsVisible = count < displayedPointCount && IsFinitePoint (pointData);" \
   "point.SetActive (pointIsVisible);" \
   "if (pointIsVisible)"; do
   require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" \
     "$point_cloud_visibility_contract" \
     "UnityPointCloudExample must reconcile marker visibility: $point_cloud_visibility_contract"
+done
+
+for finite_particle_contract in \
+  "private static bool IsFinitePoint (Vector3 point)" \
+  "float.IsNaN (point.x)" \
+  "float.IsInfinity (point.y)" \
+  "if (!IsFinitePoint (currentPoint))" \
+  "int validParticleCount = 0;" \
+  "particles [validParticleCount].position = currentPoint;" \
+  "currentPS.SetParticles (particles, validParticleCount);" \
+  "HidePointCloud ();"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/PointCloudParticleExample.cs" \
+    "$finite_particle_contract" \
+    "PointCloudParticleExample must reject non-finite coordinates: $finite_particle_contract"
+done
+for finite_marker_contract in \
+  "private static bool IsFinitePoint(Vector4 point)" \
+  "float.IsNaN (point.x)" \
+  "float.IsInfinity (point.z)" \
+  "Vector4 pointData = count < displayedPointCount" \
+  "IsFinitePoint (pointData)" \
+  "new Vector3(pointData.x, pointData.y, pointData.z)"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" \
+    "$finite_marker_contract" \
+    "UnityPointCloudExample must reject non-finite coordinates: $finite_marker_contract"
+done
+for finite_point_cloud_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$finite_point_cloud_doc" \
+    "Point-cloud renderers omit non-finite AR coordinates before writing Unity positions." \
+    "$finite_point_cloud_doc must document the finite point-cloud coordinate boundary."
+done
+for finite_point_cloud_plan_contract in \
+  "Status: Completed" \
+  "make check" \
+  "mutations" \
+  "No Unity editor, Xcode export, ARKit session, physical device"; do
+  require_contains "$POINT_CLOUD_FINITE_PLAN" "$finite_point_cloud_plan_contract" \
+    "Finite point-cloud plan must preserve completion evidence."
 done
 if [ "$(grep -Fc 'HideAllPoints ();' "$UNITY_POINT_CLOUD")" -ne 2 ]; then
   printf '%s\n' "UnityPointCloudExample must hide markers after creation and during frame reset." >&2
