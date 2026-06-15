@@ -6,6 +6,7 @@
 
 ## 2026-06-15
 
+- Point-cloud markers hide when they are not represented by the current AR frame.
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
 - Corrected the particle point-cloud loop to honor its configured maximum.
 

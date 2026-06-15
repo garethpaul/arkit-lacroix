@@ -1,6 +1,6 @@
 # Reconcile Point-Cloud Marker Visibility
 
-Status: Planned
+Status: Completed
 
 ## Summary
 
@@ -65,3 +65,26 @@ completion are rejected.
 - Run isolated hostile mutations for the rendering and evidence contracts.
 - Audit the exact intended diff, artifacts, whitespace, conflict markers,
   large files, and likely secrets before commit.
+
+## Work Completed
+
+- Hid every preallocated marker immediately after prefab creation and whenever
+  retained frame state is cleared.
+- Bounded the displayed count by the current frame length and actual owned
+  marker count.
+- Reconciled the complete owned list on each update, activating and positioning
+  only the current prefix while deactivating the unused suffix.
+- Preserved event ownership, point limits, disable/re-enable behavior, and
+  destruction cleanup.
+
+## Verification Results
+
+- POSIX shell syntax and the focused portable baseline passed.
+- Repository-root and external-directory `make check` passed the complete
+  source, lifecycle, documentation, and completed-plan contracts.
+- Seven isolated hostile mutations covering count bounding, full-list
+  iteration, activation, suffix hiding, reset hiding, documentation, and plan
+  status were rejected.
+- Exact-diff, whitespace, generated-artifact, conflict-marker, large-file, and
+  likely-secret audits passed for the intended files.
+- No Unity editor, Xcode export, simulator, physical-device, or live AR frame execution was performed.

@@ -21,6 +21,7 @@ public class UnityPointCloudExample : MonoBehaviour
             {
                 pointCloudObjects.Add (Instantiate (PointCloudPrefab));
             }
+            HideAllPoints ();
         }
         isInitialized = true;
         SubscribeToEvents ();
@@ -61,6 +62,23 @@ public class UnityPointCloudExample : MonoBehaviour
     private void ClearFrameState()
     {
         m_PointCloudData = null;
+        HideAllPoints ();
+    }
+
+    private void HideAllPoints ()
+    {
+        if (pointCloudObjects == null)
+        {
+            return;
+        }
+
+        foreach (GameObject pointCloudObject in pointCloudObjects)
+        {
+            if (pointCloudObject != null)
+            {
+                pointCloudObject.SetActive (false);
+            }
+        }
     }
 
     private void SubscribeToEvents()
@@ -92,13 +110,26 @@ public class UnityPointCloudExample : MonoBehaviour
 
     public void Update()
     {
-        if (PointCloudPrefab != null && m_PointCloudData != null)
+        if (PointCloudPrefab != null && pointCloudObjects != null)
         {
-            for (int count = 0; count < Math.Min (m_PointCloudData.Length, numPointsToShow); count++)
+            int displayedPointCount = m_PointCloudData == null
+                ? 0
+                : Math.Min (m_PointCloudData.Length, pointCloudObjects.Count);
+            for (int count = 0; count < pointCloudObjects.Count; count++)
             {
-                Vector4 vert = m_PointCloudData [count];
                 GameObject point = pointCloudObjects [count];
-                point.transform.position = new Vector3(vert.x, vert.y, vert.z);
+                if (point == null)
+                {
+                    continue;
+                }
+
+                bool pointIsVisible = count < displayedPointCount;
+                point.SetActive (pointIsVisible);
+                if (pointIsVisible)
+                {
+                    Vector4 vert = m_PointCloudData [count];
+                    point.transform.position = new Vector3(vert.x, vert.y, vert.z);
+                }
             }
         }
     }

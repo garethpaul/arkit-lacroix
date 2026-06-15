@@ -36,6 +36,7 @@ VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-o
 HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
 POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ownership.md"
 POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
+POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -86,6 +87,7 @@ for path in \
   "$VIDEO_COMMAND_BUFFER_PLAN" \
   "$HEX_LISTENER_PLAN" \
   "$POINT_CLOUD_DISABLE_RESET_PLAN" \
+  "$POINT_CLOUD_VISIBILITY_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
@@ -968,10 +970,12 @@ for particle_frame_reset_contract in "m_PointCloudData = null;" "frameUpdated = 
   fi
 done
 unity_frame_reset_body=$(sed -n '/private void ClearFrameState()/,/^    }/p' "$UNITY_POINT_CLOUD")
-if ! printf '%s\n' "$unity_frame_reset_body" | grep -Fq "m_PointCloudData = null;"; then
-  printf '%s\n' "UnityPointCloudExample frame reset must clear retained frame data." >&2
-  exit 1
-fi
+for unity_frame_reset_contract in "m_PointCloudData = null;" "HideAllPoints ();"; do
+  if ! printf '%s\n' "$unity_frame_reset_body" | grep -Fq "$unity_frame_reset_contract"; then
+    printf '%s\n' "UnityPointCloudExample frame reset must keep: $unity_frame_reset_contract" >&2
+    exit 1
+  fi
+done
 for point_cloud_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$point_cloud_doc" \
     "Point-cloud examples clear pending AR frame data when disabled" \
@@ -984,6 +988,38 @@ for point_cloud_reset_plan_contract in \
   "No Unity 5.6.1p1 editor"; do
   require_contains "$POINT_CLOUD_DISABLE_RESET_PLAN" "$point_cloud_reset_plan_contract" \
     "Point-cloud disable reset plan must record completed verification."
+done
+
+for point_cloud_visibility_contract in \
+  "HideAllPoints ();" \
+  "private void HideAllPoints ()" \
+  "pointCloudObject.SetActive (false);" \
+  "int displayedPointCount = m_PointCloudData == null" \
+  "Math.Min (m_PointCloudData.Length, pointCloudObjects.Count)" \
+  "for (int count = 0; count < pointCloudObjects.Count; count++)" \
+  "bool pointIsVisible = count < displayedPointCount;" \
+  "point.SetActive (pointIsVisible);" \
+  "if (pointIsVisible)"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" \
+    "$point_cloud_visibility_contract" \
+    "UnityPointCloudExample must reconcile marker visibility: $point_cloud_visibility_contract"
+done
+if [ "$(grep -Fc 'HideAllPoints ();' "$UNITY_POINT_CLOUD")" -ne 2 ]; then
+  printf '%s\n' "UnityPointCloudExample must hide markers after creation and during frame reset." >&2
+  exit 1
+fi
+for point_cloud_visibility_doc in AGENTS.md README.md SECURITY.md CHANGES.md; do
+  require_contains "$point_cloud_visibility_doc" \
+    "Point-cloud markers hide when they are not represented by the current AR frame." \
+    "$point_cloud_visibility_doc must document point-cloud marker visibility reconciliation."
+done
+for point_cloud_visibility_plan_contract in \
+  "Status: Completed" \
+  "make check" \
+  "hostile mutations" \
+  "No Unity editor, Xcode export, simulator, physical-device, or live AR frame execution was performed"; do
+  require_contains "$POINT_CLOUD_VISIBILITY_PLAN" "$point_cloud_visibility_plan_contract" \
+    "Point-cloud marker visibility plan must record completed verification."
 done
 
 require_file "Makefile"
