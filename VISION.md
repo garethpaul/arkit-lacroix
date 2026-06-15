@@ -32,6 +32,7 @@ Priority:
 - Keep particle painting samples inside a repaired minimum/maximum movement window
 - Keep each particle-painting stroke bounded and reuse its active particle buffer
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.

@@ -1,6 +1,6 @@
 # Own Unity Point-Cloud Listener and Object Lifecycles
 
-Status: In Progress
+Status: Completed
 
 ## Context
 
@@ -62,3 +62,23 @@ instantiate point-cloud scene objects without explicit component-level cleanup.
   behavior remain unexecuted and must not be inferred from portable checks.
 - Existing stacked pull requests remain open and require explicit owner
   authorization before merge or closure.
+
+## Verification Results
+
+Completed on 2026-06-15:
+
+- Both point-cloud examples now guard their static AR frame subscriptions,
+  unsubscribe on disable and destruction, and release only scene objects they
+  instantiated.
+- The particle example now iterates only the bounded particle count instead of
+  indexing a smaller buffer with the full source cloud.
+- Repository and external-directory `make check` passed the portable scene,
+  source, lifecycle, documentation, and plan contracts while truthfully
+  reporting the unavailable Unity editor and iOS build boundary.
+- Twelve isolated hostile mutations were rejected across subscription guards,
+  matched removal, disable and destroy routing, owned-object destruction,
+  retained-reference clearing, particle bounds, documentation, and plan status.
+- Exact diff, generated-artifact, credential-pattern, conflict-marker, POSIX
+  syntax, and whitespace audits passed before commit.
+- No Unity 5.6.1p1 editor, Xcode export, iOS simulator, or physical ARKit device
+  execution was performed or claimed.

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- Corrected the particle point-cloud loop to honor its configured maximum.
+
 ## 2026-06-14
 
 - HexColorField removes its end-edit listener from the matching event during

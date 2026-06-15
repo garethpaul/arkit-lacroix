@@ -12,6 +12,8 @@ BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
 BALL_MOVER="$ROOT_DIR/Assets/Examples/BallMover.cs"
 UNITY_AR_VIDEO="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs"
 HEX_COLOR_FIELD="$ROOT_DIR/Assets/HSVPicker/UI/HexColorField.cs"
+POINT_CLOUD_PARTICLE="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/PointCloudParticleExample.cs"
+UNITY_POINT_CLOUD="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs"
 BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
 RUNTIME_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-runtime-cap-repair.md"
 UPPER_CAP_PLAN="docs/plans/2026-06-09-unity-sodaspawn-upper-cap-repair.md"
@@ -32,6 +34,7 @@ BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-ownership.md"
 HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
+POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ownership.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -874,6 +877,71 @@ done
 for hex_listener_plan_contract in "Status: Completed" "make check" "hostile mutations"; do
   require_contains "$HEX_LISTENER_PLAN" "$hex_listener_plan_contract" \
     "HexColorField listener cleanup plan must record completed verification."
+done
+
+for point_cloud_source in "$POINT_CLOUD_PARTICLE" "$UNITY_POINT_CLOUD"; do
+  for point_cloud_contract in \
+    "private bool isInitialized;" \
+    "private bool eventsSubscribed;" \
+    "ARFrameUpdatedEvent += ARFrameUpdated;" \
+    "ARFrameUpdatedEvent -= ARFrameUpdated;" \
+    "if (eventsSubscribed)" \
+    "if (!eventsSubscribed)" \
+    "eventsSubscribed = true;" \
+    "eventsSubscribed = false;"; do
+    if ! grep -Fq "$point_cloud_contract" "$point_cloud_source"; then
+      printf '%s\n' "$point_cloud_source must keep point-cloud lifecycle contract: $point_cloud_contract" >&2
+      exit 1
+    fi
+  done
+  if [ "$(grep -Fc 'ARFrameUpdatedEvent += ARFrameUpdated;' "$point_cloud_source")" -ne 1 ] || \
+     [ "$(grep -Fc 'ARFrameUpdatedEvent -= ARFrameUpdated;' "$point_cloud_source")" -ne 1 ]; then
+    printf '%s\n' "$point_cloud_source must own exactly one matched AR frame listener pair." >&2
+    exit 1
+  fi
+done
+
+point_cloud_particle_compact=$(tr -d '[:space:]' < "$POINT_CLOUD_PARTICLE")
+unity_point_cloud_compact=$(tr -d '[:space:]' < "$UNITY_POINT_CLOUD")
+for point_cloud_compact in "$point_cloud_particle_compact" "$unity_point_cloud_compact"; do
+  if [ "$(printf '%s\n' "$point_cloud_compact" | grep -Fo 'SubscribeToEvents();' | wc -l | tr -d ' ')" -ne 2 ] || \
+     [ "$(printf '%s\n' "$point_cloud_compact" | grep -Fo 'UnsubscribeFromEvents();' | wc -l | tr -d ' ')" -ne 2 ] || \
+     ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnEnable(){if(isInitialized){SubscribeToEvents();}}' || \
+     ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnDisable(){UnsubscribeFromEvents();}' || \
+     ! printf '%s\n' "$point_cloud_compact" | grep -Fq 'OnDestroy(){UnsubscribeFromEvents();'; then
+    printf '%s\n' "Point-cloud event helpers must run from startup/enable and disable/destruction." >&2
+    exit 1
+  fi
+done
+
+for particle_cleanup_contract in \
+  "void OnDisable ()" \
+  "void OnDestroy ()" \
+  "Destroy (currentPS.gameObject);" \
+  "currentPS = null;" \
+  "m_PointCloudData = null;" \
+  "for (int index = 0; index < numParticles; index++)"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/PointCloudParticleExample.cs" "$particle_cleanup_contract" \
+    "PointCloudParticleExample must keep bounded lifecycle cleanup."
+done
+for unity_point_cleanup_contract in \
+  "public void OnDisable()" \
+  "public void OnDestroy()" \
+  "Destroy (pointCloudObject);" \
+  "pointCloudObjects.Clear ();" \
+  "pointCloudObjects = null;" \
+  "m_PointCloudData = null;"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" "$unity_point_cleanup_contract" \
+    "UnityPointCloudExample must keep owned point cleanup."
+done
+for point_cloud_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$point_cloud_doc" \
+    "Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown." \
+    "$point_cloud_doc must document point-cloud lifecycle ownership."
+done
+for point_cloud_plan_contract in "Status: Completed" "make check" "hostile mutations" "Unity 5.6.1p1 editor"; do
+  require_contains "$POINT_CLOUD_LIFECYCLE_PLAN" "$point_cloud_plan_contract" \
+    "Point-cloud lifecycle plan must record completed verification."
 done
 
 require_file "Makefile"

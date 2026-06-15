@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.XR.iOS;
 
 public class PointCloudParticleExample : MonoBehaviour {
@@ -10,13 +8,57 @@ public class PointCloudParticleExample : MonoBehaviour {
     private Vector3[] m_PointCloudData;
     private bool frameUpdated = false;
     private ParticleSystem currentPS;
-    private ParticleSystem.Particle [] particles;
+    private bool isInitialized;
+    private bool eventsSubscribed;
 
 	// Use this for initialization
 	void Start () {
-        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
         currentPS = Instantiate (pointCloudParticlePrefab);
         frameUpdated = false;
+		isInitialized = true;
+		SubscribeToEvents ();
+	}
+
+	void OnEnable ()
+	{
+		if (isInitialized) {
+			SubscribeToEvents ();
+		}
+	}
+
+	void OnDisable ()
+	{
+		UnsubscribeFromEvents ();
+	}
+
+	void OnDestroy ()
+	{
+		UnsubscribeFromEvents ();
+		if (currentPS != null) {
+			Destroy (currentPS.gameObject);
+			currentPS = null;
+		}
+		m_PointCloudData = null;
+	}
+
+	private void SubscribeToEvents ()
+	{
+		if (eventsSubscribed) {
+			return;
+		}
+
+		UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+		eventsSubscribed = true;
+	}
+
+	private void UnsubscribeFromEvents ()
+	{
+		if (!eventsSubscribed) {
+			return;
+		}
+
+		UnityARSessionNativeInterface.ARFrameUpdatedEvent -= ARFrameUpdated;
+		eventsSubscribed = false;
 	}
 	
     public void ARFrameUpdated(UnityARCamera camera)
@@ -31,12 +73,11 @@ public class PointCloudParticleExample : MonoBehaviour {
             if (m_PointCloudData != null && m_PointCloudData.Length > 0) {
                 int numParticles = Mathf.Min (m_PointCloudData.Length, maxPointsToShow);
                 ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
-                int index = 0;
-                foreach (Vector3 currentPoint in m_PointCloudData) {     
+                for (int index = 0; index < numParticles; index++) {
+                    Vector3 currentPoint = m_PointCloudData [index];
                     particles [index].position = currentPoint;
                     particles [index].startColor = new Color (1.0f, 1.0f, 1.0f);
                     particles [index].startSize = particleSize;
-                    index++;
                 }
                 currentPS.SetParticles (particles, numParticles);
             } else {

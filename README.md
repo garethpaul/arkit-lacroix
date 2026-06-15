@@ -118,6 +118,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   reuses one particle buffer per active stroke instead of allocating a full
   replacement buffer after every accepted AR frame.
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.
