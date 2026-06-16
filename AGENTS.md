@@ -30,6 +30,7 @@
 ## Testing guidance
 
 - Test-related files detected: `Assets/HSVPicker/Other/ColorPickerTester.cs`, `Assets/HSVPicker/Other/ColorPickerTester.cs.meta`, `Assets/HSVPicker/PickerTest.unity`, `Assets/HSVPicker/PickerTest.unity.meta`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARHitTestResult.cs`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARHitTestResult.cs.meta`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARHitTestResultType.cs`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARHitTestResultType.cs.meta`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARLightEstimate.cs`, `Assets/Plugins/iOS/UnityARKit/NativeInterface/ARLightEstimate.cs.meta`
+- `Tests/NativeInterfaceContracts` compiles eleven production ARKit ABI sources with .NET 8 and executes portable layout/value contracts. It does not compile Unity-dependent scripts or prove editor, Xcode, camera, or device behavior.
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 

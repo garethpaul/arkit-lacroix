@@ -1,5 +1,13 @@
 # Changes
 
+## 2026-06-16
+
+- Added a .NET 8 compiler and executable ABI-contract gate for eleven production
+  ARKit native-interface structs and enums that do not depend on Unity
+  assemblies.
+- Kept the portable compiler evidence separate from the unexecuted Unity 5.6,
+  Xcode export, camera, and physical-device verification boundary.
+
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
 - AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
 

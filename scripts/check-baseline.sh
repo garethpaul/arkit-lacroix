@@ -39,6 +39,7 @@ POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-
 POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
 POINT_CLOUD_FINITE_PLAN="docs/plans/2026-06-15-unity-point-cloud-finite-coordinates.md"
 HIT_TEST_FINITE_PLAN="docs/plans/2026-06-16-unity-hit-test-finite-coordinates.md"
+NATIVE_INTERFACE_CONTRACT_PLAN="docs/plans/2026-06-16-arkit-native-interface-contracts.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -57,7 +58,7 @@ require_contains() {
   pattern=$2
   message=$3
 
-  if ! grep -Fq "$pattern" "$ROOT_DIR/$path"; then
+  if ! grep -Fq -- "$pattern" "$ROOT_DIR/$path"; then
     printf '%s\n' "$message" >&2
     exit 1
   fi
@@ -93,7 +94,11 @@ for path in \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
+  "$NATIVE_INTERFACE_CONTRACT_PLAN" \
   "DEVICE_VERIFICATION.md" \
+  "Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj" \
+  "Tests/NativeInterfaceContracts/Program.cs" \
+  "scripts/run-native-interface-contracts.sh" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -116,6 +121,59 @@ for path in \
   "Assets/Models/can4.obj" \
   "Screenshots/demo01.png"; do
   require_file "$path"
+done
+
+if [ ! -x "$ROOT_DIR/scripts/run-native-interface-contracts.sh" ]; then
+  printf '%s\n' "Native-interface contract runner must remain executable." >&2
+  exit 1
+fi
+
+for native_contract_source in \
+  ARErrorCode.cs \
+  ARHitTestResultType.cs \
+  ARLightEstimate.cs \
+  ARPlaneAnchorAlignment.cs \
+  ARPoint.cs \
+  ARRect.cs \
+  ARSize.cs \
+  ARTextureHandles.cs \
+  ARTrackingQuality.cs \
+  ARTrackingState.cs \
+  ARTrackingStateReason.cs; do
+  require_contains "Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj" \
+    "NativeInterface/$native_contract_source" \
+    "Native-interface contract project must compile production source: $native_contract_source"
+done
+
+for native_contract_assertion in \
+  'Marshal.SizeOf<ARPoint>() == 16' \
+  'Marshal.SizeOf<ARRect>() == 32' \
+  'Marshal.SizeOf<ARTextureHandles>() == IntPtr.Size * 2' \
+  'Enum.GetUnderlyingType(typeof(ARErrorCode)) == typeof(long)' \
+  'ARHitTestResultType.ARHitTestResultTypeExistingPlaneUsingExtent' \
+  'ARTrackingStateReason.ARTrackingStateReasonInsufficientFeatures'; do
+  require_contains "Tests/NativeInterfaceContracts/Program.cs" "$native_contract_assertion" \
+    "Native-interface executable contract must keep assertion: $native_contract_assertion"
+done
+
+for native_runner_contract in \
+  'DOTNET_CLI_HOME="$BUILD_DIR/dotnet-home"' \
+  'NUGET_PACKAGES="$BUILD_DIR/nuget"' \
+  'NativeInterfaceContracts.csproj' \
+  'BaseIntermediateOutputPath="$BUILD_DIR/obj/"' \
+  '--output "$BUILD_DIR/bin"' \
+  '"$DOTNET" "$BUILD_DIR/bin/NativeInterfaceContracts.dll"'; do
+  require_contains "scripts/run-native-interface-contracts.sh" "$native_runner_contract" \
+    "Native-interface runner must isolate build output: $native_runner_contract"
+done
+
+for native_plan_contract in \
+  'status: completed' \
+  'eleven production ARKit native-interface sources' \
+  'make check' \
+  'does not compile the full Unity project'; do
+  require_contains "$NATIVE_INTERFACE_CONTRACT_PLAN" "$native_plan_contract" \
+    "Native-interface compiler plan must preserve truthful completion evidence."
 done
 
 for device_contract in \
@@ -732,6 +790,10 @@ require_contains ".github/workflows/check.yml" "actions/checkout@df4cb1c069e1874
   "CI workflow must pin actions/checkout to the reviewed commit."
 require_contains ".github/workflows/check.yml" "persist-credentials: false" \
   "CI checkout must not persist repository credentials."
+require_contains ".github/workflows/check.yml" "actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9" \
+  "CI workflow must pin actions/setup-dotnet to the reviewed commit."
+require_contains ".github/workflows/check.yml" "dotnet-version: 8.0.422" \
+  "CI workflow must install the maintained native-interface compiler runtime."
 require_contains ".github/workflows/check.yml" "permissions:" \
   "CI workflow must declare token permissions."
 require_contains ".github/workflows/check.yml" "contents: read" \
@@ -1140,10 +1202,16 @@ for point_cloud_visibility_plan_contract in \
 done
 
 require_file "Makefile"
+require_contains ".gitignore" '!Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj' \
+  "The intentional native-interface contract project must remain trackable."
 require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
   "Makefile must resolve repository-root commands from its own location."
 require_contains "Makefile" '$(ROOT)scripts/check-baseline.sh' \
   "Makefile must run the SDK-free baseline check."
+require_contains "Makefile" 'DOTNET ?= dotnet' \
+  "Makefile must expose the native-interface compiler command."
+require_contains "Makefile" '$(ROOT)scripts/run-native-interface-contracts.sh' \
+  "Makefile tests must execute the production native-interface contracts when dotnet is available."
 require_contains "Makefile" "lint:" \
   "Makefile must expose a lint gate."
 require_contains "Makefile" "test:" \

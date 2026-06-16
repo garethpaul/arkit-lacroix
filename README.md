@@ -58,7 +58,13 @@ make check
 scripts/check-baseline.sh
 ```
 
-Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in.
+When .NET 8 is available, `make test` compiles eleven checked-in production
+ARKit native-interface structs and enums and executes their ABI layout, backing
+type, numeric value, and flag-composition contracts. Build outputs stay in a
+temporary directory. This portable check does not compile Unity-dependent
+scripts or replace the Unity editor, Xcode export, or physical-device matrix.
+
+Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in. The native-interface .NET harness covers only the production sources that have no Unity assembly dependency.
 
 Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit
 Unity/ARKit matrix. It covers editor and Xcode export, camera permission,

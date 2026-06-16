@@ -12,6 +12,7 @@
 ExportedObj/
 .consulo/
 *.csproj
+!Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj
 *.unityproj
 *.sln
 *.suo

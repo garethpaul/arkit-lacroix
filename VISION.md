@@ -42,6 +42,8 @@ Priority:
 - UnityARVideo reuses its external texture pair and releases it on teardown.
 - UnityARVideo detaches and releases its command buffer on disable and destroy.
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
+- Compile and execute portable ABI contracts for production ARKit
+  native-interface sources that do not require Unity assemblies
 - Keep the SDK-free `make check` baseline running in GitHub Actions
 - Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately
 - Avoid asset or plugin changes without explaining Unity version assumptions
