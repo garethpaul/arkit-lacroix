@@ -38,6 +38,7 @@ POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ow
 POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
 POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
 POINT_CLOUD_FINITE_PLAN="docs/plans/2026-06-15-unity-point-cloud-finite-coordinates.md"
+HIT_TEST_FINITE_PLAN="docs/plans/2026-06-16-unity-hit-test-finite-coordinates.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
 SPAWN_CADENCE_PLAN="docs/plans/2026-06-13-unity-sodaspawn-cadence.md"
 DEVICE_VERIFICATION_PLAN="docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md"
@@ -263,6 +264,83 @@ if [ "$(grep -Fc "ClearMoveBall ();" "$BALL_MOVER")" -ne 3 ] || \
   printf '%s\n' "BallMover replacement, disable, and gesture cleanup must share one owner path." >&2
   exit 1
 fi
+
+for hit_test_file in "$BALL_MAKER" "$BALL_MOVER"; do
+  for finite_coordinate_contract in \
+    "private static bool IsFinitePosition (Vector3 position)" \
+    "!float.IsNaN (position.x) && !float.IsInfinity (position.x)" \
+    "!float.IsNaN (position.y) && !float.IsInfinity (position.y)" \
+    "!float.IsNaN (position.z) && !float.IsInfinity (position.z)"; do
+    if ! grep -Fq "$finite_coordinate_contract" "$hit_test_file"; then
+      printf '%s\n' "AR hit-test finite-coordinate contract is missing from ${hit_test_file#"$ROOT_DIR/"}: $finite_coordinate_contract" >&2
+      exit 1
+    fi
+  done
+done
+
+ball_create_scope=$(sed -n '/void CreateBall/,/void Update ()/p' "$BALL_MAKER")
+ball_finite_line=$(printf '%s\n' "$ball_create_scope" | grep -nF "if (!IsFinitePosition (atPosition))" | cut -d: -f1)
+ball_prefab_line=$(printf '%s\n' "$ball_create_scope" | grep -nF "if (ballPrefab == null)" | cut -d: -f1)
+ball_instantiate_line=$(printf '%s\n' "$ball_create_scope" | grep -nF "GameObject ballGO = Instantiate" | cut -d: -f1)
+if [ -z "$ball_finite_line" ] || [ -z "$ball_prefab_line" ] || \
+   [ -z "$ball_instantiate_line" ] || \
+   [ "$ball_finite_line" -ge "$ball_prefab_line" ] || \
+   [ "$ball_prefab_line" -ge "$ball_instantiate_line" ]; then
+  printf '%s\n' "BallMaker must reject non-finite final positions before prefab validation and instantiation." >&2
+  exit 1
+fi
+
+ball_hit_scope=$(sed -n '/Vector3 position = UnityARMatrixOps.GetPosition/,/CreateBall (spawnPosition);/p' "$BALL_MAKER")
+for ball_hit_contract in \
+  "Vector3 spawnPosition = new Vector3 (position.x, position.y + createHeight, position.z);" \
+  "if (!IsFinitePosition (spawnPosition))" \
+  "CreateBall (spawnPosition);"; do
+  if ! printf '%s\n' "$ball_hit_scope" | grep -Fq "$ball_hit_contract"; then
+    printf '%s\n' "BallMaker adjusted hit-position guard is missing: $ball_hit_contract" >&2
+    exit 1
+  fi
+done
+
+ball_mover_create_scope=$(sed -n '/void CreateMoveBall/,/void OnDisable ()/p' "$BALL_MOVER")
+mover_finite_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "if (!IsFinitePosition (explodePosition))" | cut -d: -f1)
+mover_prefab_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "if (collBallPrefab == null)" | cut -d: -f1)
+mover_clear_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "ClearMoveBall ();" | cut -d: -f1)
+mover_instantiate_line=$(printf '%s\n' "$ball_mover_create_scope" | grep -nF "collBallGO = Instantiate" | cut -d: -f1)
+if [ -z "$mover_finite_line" ] || [ -z "$mover_prefab_line" ] || \
+   [ -z "$mover_clear_line" ] || [ -z "$mover_instantiate_line" ] || \
+   [ "$mover_finite_line" -ge "$mover_prefab_line" ] || \
+   [ "$mover_prefab_line" -ge "$mover_clear_line" ] || \
+   [ "$mover_clear_line" -ge "$mover_instantiate_line" ]; then
+  printf '%s\n' "BallMover must reject non-finite replacement positions before clearing ownership." >&2
+  exit 1
+fi
+
+mover_moved_scope=$(sed -n '/touch.phase == TouchPhase.Moved/,/touch.phase != TouchPhase.Stationary/p' "$BALL_MOVER")
+moved_position_line=$(printf '%s\n' "$mover_moved_scope" | grep -nF "Vector3 position = UnityARMatrixOps.GetPosition" | cut -d: -f1)
+moved_guard_line=$(printf '%s\n' "$mover_moved_scope" | grep -nF "if (!IsFinitePosition (position))" | cut -d: -f1)
+moved_write_line=$(printf '%s\n' "$mover_moved_scope" | grep -nF "Vector3.MoveTowards" | cut -d: -f1)
+if [ -z "$moved_position_line" ] || [ -z "$moved_guard_line" ] || \
+   [ -z "$moved_write_line" ] || \
+   [ "$moved_position_line" -ge "$moved_guard_line" ] || \
+   [ "$moved_guard_line" -ge "$moved_write_line" ]; then
+  printf '%s\n' "BallMover must reject non-finite moved targets before writing the transform." >&2
+  exit 1
+fi
+
+for hit_test_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$hit_test_doc" \
+    "AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms." \
+    "$hit_test_doc must document finite AR hit-test coordinates."
+done
+
+for hit_test_plan_contract in \
+  "Status: Completed" \
+  "IsFinitePosition" \
+  "make check" \
+  "mutations"; do
+  require_contains "$HIT_TEST_FINITE_PLAN" "$hit_test_plan_contract" \
+    "AR hit-test finite-coordinate plan must record completed verification: $hit_test_plan_contract"
+done
 
 for video_texture_contract in \
   "private void UpdateVideoTextures(Resolution resolution, ARTextureHandles handles)" \

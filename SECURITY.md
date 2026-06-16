@@ -40,6 +40,7 @@ Helpful reports include:
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
 - Point-cloud markers hide when they are not represented by the current AR frame.
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
 - The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
   oldest ownership first, and releases retained balls when disabled.
 - UnityARBallz BallMover releases its tracked object before replacement and when disabled.

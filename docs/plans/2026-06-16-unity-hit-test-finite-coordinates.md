@@ -1,6 +1,6 @@
 # Unity Hit-Test Finite Coordinates
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -79,3 +79,18 @@ guidance, and completed-plan evidence.
   object limits, materials, prefabs, scenes, packages, and project settings.
 - Unity, Xcode, ARKit, SDK, dependency, or workflow upgrades.
 - Editor, simulator, or physical-device execution.
+
+## Completion Evidence
+
+- Source inspection confirms both `IsFinitePosition` predicates validate XYZ
+  with `float.IsNaN` and `float.IsInfinity` before transform mutation.
+- BallMaker validates the final height-adjusted spawn vector before ownership;
+  BallMover validates initial replacement before cleanup and moved targets
+  before `Vector3.MoveTowards`.
+- Repository-root and external-directory `make check` both passed the source,
+  lifecycle, scene, project, workflow, and completed-plan contracts on June 16,
+  2026; both truthfully reported that Unity 5.6.1p1 and the Unity/iOS build are
+  unavailable.
+- Eight isolated mutations cover both predicates and ownership guards, the
+  adjusted-spawn and moved-target guards, maintained guidance, and reopened
+  plan status.

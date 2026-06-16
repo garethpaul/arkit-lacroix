@@ -15,6 +15,10 @@ public class BallMover : MonoBehaviour {
 
 	void CreateMoveBall( Vector3 explodePosition)
 	{
+		if (!IsFinitePosition (explodePosition)) {
+			return;
+		}
+
 		if (collBallPrefab == null) {
 			return;
 		}
@@ -53,6 +57,9 @@ public class BallMover : MonoBehaviour {
 				if (hitResults.Count > 0) {
 					foreach (var hitResult in hitResults) {
 						Vector3 position = UnityARMatrixOps.GetPosition (hitResult.worldTransform);
+						if (!IsFinitePosition (position)) {
+							continue;
+						}
 						CreateMoveBall (position);
 						break;
 					}
@@ -70,6 +77,9 @@ public class BallMover : MonoBehaviour {
 				if (hitResults.Count > 0) {
 					foreach (var hitResult in hitResults) {
 						Vector3 position = UnityARMatrixOps.GetPosition (hitResult.worldTransform);
+						if (!IsFinitePosition (position)) {
+							continue;
+						}
 						collBallGO.transform.position = Vector3.MoveTowards (collBallGO.transform.position, position, 0.05f);
 						break;
 					}
@@ -80,5 +90,11 @@ public class BallMover : MonoBehaviour {
 			}
 		}
 
+	}
+
+	private static bool IsFinitePosition (Vector3 position) {
+		return !float.IsNaN (position.x) && !float.IsInfinity (position.x) &&
+			!float.IsNaN (position.y) && !float.IsInfinity (position.y) &&
+			!float.IsNaN (position.z) && !float.IsInfinity (position.z);
 	}
 }

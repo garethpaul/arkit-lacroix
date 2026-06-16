@@ -26,6 +26,10 @@ public class BallMaker : MonoBehaviour {
 
 	void CreateBall(Vector3 atPosition)
 	{
+		if (!IsFinitePosition (atPosition)) {
+			return;
+		}
+
 		if (ballPrefab == null) {
 			return;
 		}
@@ -74,7 +78,11 @@ public class BallMaker : MonoBehaviour {
 				if (hitResults.Count > 0) {
 					foreach (var hitResult in hitResults) {
 						Vector3 position = UnityARMatrixOps.GetPosition (hitResult.worldTransform);
-						CreateBall (new Vector3 (position.x, position.y + createHeight, position.z));
+						Vector3 spawnPosition = new Vector3 (position.x, position.y + createHeight, position.z);
+						if (!IsFinitePosition (spawnPosition)) {
+							continue;
+						}
+						CreateBall (spawnPosition);
 						break;
 					}
 				}
@@ -86,6 +94,12 @@ public class BallMaker : MonoBehaviour {
 
 	void OnDisable () {
 		ClearBalls ();
+	}
+
+	private static bool IsFinitePosition (Vector3 position) {
+		return !float.IsNaN (position.x) && !float.IsInfinity (position.x) &&
+			!float.IsNaN (position.y) && !float.IsInfinity (position.y) &&
+			!float.IsNaN (position.z) && !float.IsInfinity (position.z);
 	}
 
 	private void TrimBallsToLimit () {

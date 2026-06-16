@@ -1,6 +1,7 @@
 # Changes
 
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
 
 - Cleared pending point-cloud frame state on disable so re-enabled components
   wait for a frame from the new enabled lifetime.
