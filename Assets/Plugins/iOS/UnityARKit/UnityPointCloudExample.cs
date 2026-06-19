@@ -1,9 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.XR.iOS;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 public class UnityPointCloudExample : MonoBehaviour
 {
@@ -11,10 +9,11 @@ public class UnityPointCloudExample : MonoBehaviour
     public GameObject PointCloudPrefab = null;
     private List<GameObject> pointCloudObjects;
     private Vector3[] m_PointCloudData;
+    private bool isInitialized;
+    private bool eventsSubscribed;
 
     public void Start()
     {
-        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
         if (PointCloudPrefab != null)
         {
             pointCloudObjects = new List<GameObject> ();
@@ -22,7 +21,93 @@ public class UnityPointCloudExample : MonoBehaviour
             {
                 pointCloudObjects.Add (Instantiate (PointCloudPrefab));
             }
+            HideAllPoints ();
         }
+        isInitialized = true;
+        SubscribeToEvents ();
+    }
+
+    public void OnEnable()
+    {
+        if (isInitialized)
+        {
+            SubscribeToEvents ();
+        }
+    }
+
+    public void OnDisable()
+    {
+        UnsubscribeFromEvents ();
+        ClearFrameState ();
+    }
+
+    public void OnDestroy()
+    {
+        UnsubscribeFromEvents ();
+        ClearFrameState ();
+        if (pointCloudObjects != null)
+        {
+            foreach (GameObject pointCloudObject in pointCloudObjects)
+            {
+                if (pointCloudObject != null)
+                {
+                    Destroy (pointCloudObject);
+                }
+            }
+            pointCloudObjects.Clear ();
+            pointCloudObjects = null;
+        }
+    }
+
+    private void ClearFrameState()
+    {
+        m_PointCloudData = null;
+        HideAllPoints ();
+    }
+
+    private void HideAllPoints ()
+    {
+        if (pointCloudObjects == null)
+        {
+            return;
+        }
+
+        foreach (GameObject pointCloudObject in pointCloudObjects)
+        {
+            if (pointCloudObject != null)
+            {
+                pointCloudObject.SetActive (false);
+            }
+        }
+    }
+
+    private void SubscribeToEvents()
+    {
+        if (eventsSubscribed)
+        {
+            return;
+        }
+
+        UnityARSessionNativeInterface.ARFrameUpdatedEvent += ARFrameUpdated;
+        eventsSubscribed = true;
+    }
+
+    private void UnsubscribeFromEvents()
+    {
+        if (!eventsSubscribed)
+        {
+            return;
+        }
+
+        UnityARSessionNativeInterface.ARFrameUpdatedEvent -= ARFrameUpdated;
+        eventsSubscribed = false;
+    }
+
+    private static bool IsFinitePoint(Vector4 point)
+    {
+        return !float.IsNaN (point.x) && !float.IsInfinity (point.x) &&
+            !float.IsNaN (point.y) && !float.IsInfinity (point.y) &&
+            !float.IsNaN (point.z) && !float.IsInfinity (point.z);
     }
 
     public void ARFrameUpdated(UnityARCamera camera)
@@ -32,13 +117,28 @@ public class UnityPointCloudExample : MonoBehaviour
 
     public void Update()
     {
-        if (PointCloudPrefab != null && m_PointCloudData != null)
+        if (PointCloudPrefab != null && pointCloudObjects != null)
         {
-            for (int count = 0; count < Math.Min (m_PointCloudData.Length, numPointsToShow); count++)
+            int displayedPointCount = m_PointCloudData == null
+                ? 0
+                : Math.Min (m_PointCloudData.Length, pointCloudObjects.Count);
+            for (int count = 0; count < pointCloudObjects.Count; count++)
             {
-                Vector4 vert = m_PointCloudData [count];
                 GameObject point = pointCloudObjects [count];
-                point.transform.position = new Vector3(vert.x, vert.y, vert.z);
+                if (point == null)
+                {
+                    continue;
+                }
+
+                Vector4 pointData = count < displayedPointCount
+                    ? m_PointCloudData [count]
+                    : Vector4.zero;
+                bool pointIsVisible = count < displayedPointCount && IsFinitePoint (pointData);
+                point.SetActive (pointIsVisible);
+                if (pointIsVisible)
+                {
+                    point.transform.position = new Vector3(pointData.x, pointData.y, pointData.z);
+                }
             }
         }
     }

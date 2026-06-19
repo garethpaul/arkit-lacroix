@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARErrorCode.cs" Link="Production/ARErrorCode.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARHitTestResultType.cs" Link="Production/ARHitTestResultType.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARLightEstimate.cs" Link="Production/ARLightEstimate.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARPlaneAnchorAlignment.cs" Link="Production/ARPlaneAnchorAlignment.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARPoint.cs" Link="Production/ARPoint.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARRect.cs" Link="Production/ARRect.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARSize.cs" Link="Production/ARSize.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARTextureHandles.cs" Link="Production/ARTextureHandles.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARTrackingQuality.cs" Link="Production/ARTrackingQuality.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARTrackingState.cs" Link="Production/ARTrackingState.cs" />
+    <Compile Include="../../Assets/Plugins/iOS/UnityARKit/NativeInterface/ARTrackingStateReason.cs" Link="Production/ARTrackingStateReason.cs" />
+  </ItemGroup>
+</Project>

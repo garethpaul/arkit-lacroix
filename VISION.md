@@ -23,15 +23,34 @@ Priority:
 - Keep spawn caps bounded to the original 1000-can cleanup limit
 - Keep spawned-can tracking aligned with live scene objects
 - Keep the spawn cap populated through bounded oldest-first eviction
+- Keep can creation on an explicit bounded cadence instead of device frame rate
 - Keep AR ambient light updates tolerant of missing scene components
 - Keep AR ambient light dependency lookup tolerant of late availability
 - Keep AR ambient intensity writes guarded against invalid values
 - Keep AR ambient intensity bounded to Unity's over-bright range
 - Keep particle painting callbacks scoped to active, initialized components
+- Keep particle painting samples inside a repaired minimum/maximum movement window
+- Keep each particle-painting stroke bounded and reuse its active particle buffer
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
+- The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
+  oldest ownership first, and releases retained balls when disabled.
+- UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
+- UnityARVideo detaches and releases its command buffer on disable and destroy.
 - Keep root lint, test, and build gates wired to the SDK-free Unity baseline
+- Compile and execute portable ABI contracts for production ARKit
+  native-interface sources that do not require Unity assemblies
 - Keep the SDK-free `make check` baseline running in GitHub Actions
+- Keep CodeQL default-setup coverage for Actions and Unity C#, and close the native plugin analysis gap separately
 - Avoid asset or plugin changes without explaining Unity version assumptions
 - Keep generated Unity metadata consistent with asset changes
+- Keep exact-commit ARKit Lacroix device verification matrix evidence separate
+  from portable checks, with unexecuted Unity, Xcode, camera, and device rows
+  explicit
 
 Next priorities:
 
@@ -39,6 +58,8 @@ Next priorities:
 - Add manual verification steps for launching the AR scene
 - Clarify which assets are original, third-party, or replaceable
 - Modernize ARKit/plugin dependencies only in a dedicated pass
+- Execute the device verification matrix with privacy-safe camera, tracking,
+  resource-ownership, interruption, and long-session evidence
 
 Contribution rules:
 

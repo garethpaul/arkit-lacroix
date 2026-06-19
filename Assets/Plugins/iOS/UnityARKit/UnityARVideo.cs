@@ -15,29 +15,62 @@ namespace UnityEngine.XR.iOS
         private Texture2D _videoTextureCbCr;
 
 		private UnityARSessionNativeInterface m_Session;
+		private bool bCommandBufferInitialized;
 
+		private bool InitializeCommandBuffer()
+		{
+			Camera videoCamera = GetComponent<Camera>();
+			if (videoCamera == null || m_ClearMaterial == null) {
+				return false;
+			}
+
+			m_VideoCommandBuffer = new CommandBuffer();
+			m_VideoCommandBuffer.Blit(null, BuiltinRenderTextureType.CurrentActive, m_ClearMaterial);
+			videoCamera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+			bCommandBufferInitialized = true;
+			return true;
+		}
+
+		private void ReleaseCommandBuffer()
+		{
+			if (m_VideoCommandBuffer == null) {
+				bCommandBufferInitialized = false;
+				return;
+			}
+
+			Camera videoCamera = GetComponent<Camera>();
+			if (videoCamera != null) {
+				videoCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+			}
+			m_VideoCommandBuffer.Release();
+			m_VideoCommandBuffer = null;
+			bCommandBufferInitialized = false;
+		}
 
 #if !UNITY_EDITOR
-        private bool bCommandBufferInitialized;
-
         public void Start()
         {
 			m_Session = UnityARSessionNativeInterface.GetARSessionNativeInterface ();
             bCommandBufferInitialized = false;
         }
 
-        void InitializeCommandBuffer()
+        private void UpdateVideoTextures(Resolution resolution, ARTextureHandles handles)
         {
-            m_VideoCommandBuffer = new CommandBuffer(); 
-            m_VideoCommandBuffer.Blit(null, BuiltinRenderTextureType.CurrentActive, m_ClearMaterial);
-            GetComponent<Camera>().AddCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
-            bCommandBufferInitialized = true;
-
-        }
-
-        void OnDestroy()
-        {
-            GetComponent<Camera>().RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+            if (_videoTextureY == null || _videoTextureCbCr == null ||
+                _videoTextureY.width != resolution.width || _videoTextureY.height != resolution.height) {
+                DestroyVideoTextures ();
+                _videoTextureY = Texture2D.CreateExternalTexture(resolution.width, resolution.height,
+                    TextureFormat.R8, false, false, handles.textureY);
+                _videoTextureCbCr = Texture2D.CreateExternalTexture(resolution.width, resolution.height,
+                    TextureFormat.RG16, false, false, handles.textureCbCr);
+                _videoTextureY.filterMode = FilterMode.Bilinear;
+                _videoTextureY.wrapMode = TextureWrapMode.Repeat;
+                _videoTextureCbCr.filterMode = FilterMode.Bilinear;
+                _videoTextureCbCr.wrapMode = TextureWrapMode.Repeat;
+            } else {
+                _videoTextureY.UpdateExternalTexture(handles.textureY);
+                _videoTextureCbCr.UpdateExternalTexture(handles.textureCbCr);
+            }
         }
 
         public void OnPreRender()
@@ -48,25 +81,14 @@ namespace UnityEngine.XR.iOS
                 return;
             }
 
-            if (!bCommandBufferInitialized) {
-                InitializeCommandBuffer ();
+            if (!bCommandBufferInitialized && !InitializeCommandBuffer ()) {
+                return;
             }
 
             Resolution currentResolution = Screen.currentResolution;
 
             // Texture Y
-            _videoTextureY = Texture2D.CreateExternalTexture(currentResolution.width, currentResolution.height,
-                TextureFormat.R8, false, false, (System.IntPtr)handles.textureY);
-            _videoTextureY.filterMode = FilterMode.Bilinear;
-            _videoTextureY.wrapMode = TextureWrapMode.Repeat;
-            _videoTextureY.UpdateExternalTexture(handles.textureY);
-
-            // Texture CbCr
-            _videoTextureCbCr = Texture2D.CreateExternalTexture(currentResolution.width, currentResolution.height,
-                TextureFormat.RG16, false, false, (System.IntPtr)handles.textureCbCr);
-            _videoTextureCbCr.filterMode = FilterMode.Bilinear;
-            _videoTextureCbCr.wrapMode = TextureWrapMode.Repeat;
-            _videoTextureCbCr.UpdateExternalTexture(handles.textureCbCr);
+            UpdateVideoTextures(currentResolution, handles);
 
             m_ClearMaterial.SetTexture("_textureY", _videoTextureY);
             m_ClearMaterial.SetTexture("_textureCbCr", _videoTextureCbCr);
@@ -90,18 +112,36 @@ namespace UnityEngine.XR.iOS
             m_ClearMaterial.SetInt("_isPortrait", isPortrait);
         }
 #else
-        public void Start()
+        public void OnEnable()
         {
-            m_VideoCommandBuffer = new CommandBuffer(); 
-            m_VideoCommandBuffer.Blit(null, BuiltinRenderTextureType.CurrentActive, m_ClearMaterial);
-            GetComponent<Camera>().AddCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
-        }
-
-        void OnDestroy()
-        {
-            GetComponent<Camera>().RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, m_VideoCommandBuffer);
+            if (!bCommandBufferInitialized) {
+                InitializeCommandBuffer ();
+            }
         }
 
 #endif
+
+		void OnDisable()
+		{
+			ReleaseCommandBuffer ();
+		}
+
+		void OnDestroy()
+		{
+			ReleaseCommandBuffer ();
+			DestroyVideoTextures ();
+		}
+
+        private void DestroyVideoTextures()
+        {
+            if (_videoTextureY != null) {
+                Destroy (_videoTextureY);
+                _videoTextureY = null;
+            }
+            if (_videoTextureCbCr != null) {
+                Destroy (_videoTextureCbCr);
+                _videoTextureCbCr = null;
+            }
+        }
     }
 }

@@ -4,25 +4,128 @@ using UnityEngine;
 using UnityEngine.XR.iOS;
 
 public class ParticlePainter : MonoBehaviour {
+    private const float DefaultMinDistanceThreshold = 0.05f;
+    private const float DefaultMaxDistanceThreshold = 1.0f;
+    private const int DefaultMaxPaintVertices = 10000;
+    private const int DefaultMaxPaintSystems = 32;
+
     public ParticleSystem painterParticlePrefab;
     public float minDistanceThreshold;
     public float maxDistanceThreshold;
     private bool frameUpdated = false;
     public float particleSize = .1f;
     public float penDistance = 0.2f;
+    [Range (1, DefaultMaxPaintVertices)]
+    public int maxPaintVertices = DefaultMaxPaintVertices;
+    [Range (1, DefaultMaxPaintSystems)]
+    public int maxPaintSystems = DefaultMaxPaintSystems;
     public ColorPicker colorPicker;
     private ParticleSystem currentPS;
     private ParticleSystem.Particle [] particles;
-    private Vector3 previousPosition = Vector3.zero;  //camera starts from origin
+    private Vector3 previousPosition = Vector3.zero;
     private List<Vector3> currentPaintVertices;
     private Color currentColor = Color.white;
     private List<ParticleSystem> paintSystems;
     private int paintMode = 0;  //0 = off, 1 = pick color, 2 = paint
     private bool isInitialized = false;
     private bool eventsSubscribed = false;
+    private bool hasPreviousPosition = false;
+
+    private bool IsValidDistanceThreshold (float value)
+    {
+        return !float.IsNaN (value) && !float.IsInfinity (value) && value > 0.0f;
+    }
+
+    private void RepairDistanceThresholds ()
+    {
+        if (!IsValidDistanceThreshold (minDistanceThreshold) ||
+            !IsValidDistanceThreshold (maxDistanceThreshold) ||
+            maxDistanceThreshold <= minDistanceThreshold) {
+            minDistanceThreshold = DefaultMinDistanceThreshold;
+            maxDistanceThreshold = DefaultMaxDistanceThreshold;
+        }
+    }
+
+    private void RepairMaxPaintVertices ()
+    {
+        if (maxPaintVertices < 1 || maxPaintVertices > DefaultMaxPaintVertices) {
+            maxPaintVertices = DefaultMaxPaintVertices;
+        }
+    }
+
+    private void RepairMaxPaintSystems ()
+    {
+        if (maxPaintSystems < 1 || maxPaintSystems > DefaultMaxPaintSystems) {
+            maxPaintSystems = DefaultMaxPaintSystems;
+        }
+    }
+
+    private void EnsureParticleBuffer ()
+    {
+        if (particles == null || particles.Length != maxPaintVertices) {
+            particles = new ParticleSystem.Particle[maxPaintVertices];
+        }
+    }
+
+    private void TrimCurrentPaintVerticesToLimit ()
+    {
+        if (currentPaintVertices.Count <= maxPaintVertices) {
+            return;
+        }
+
+        currentPaintVertices.RemoveRange (
+            maxPaintVertices,
+            currentPaintVertices.Count - maxPaintVertices);
+        frameUpdated = true;
+    }
+
+    private void TrimPaintSystemsToLimit ()
+    {
+        if (paintSystems == null) {
+            return;
+        }
+
+        while (paintSystems.Count >= maxPaintSystems) {
+            ParticleSystem oldestPaintSystem = paintSystems [0];
+            paintSystems.RemoveAt (0);
+            if (oldestPaintSystem != null) {
+                Destroy (oldestPaintSystem.gameObject);
+            }
+        }
+    }
+
+    private void ClearPaintSystems ()
+    {
+        if (currentPS != null) {
+            Destroy (currentPS.gameObject);
+            currentPS = null;
+        }
+
+        if (paintSystems == null) {
+            return;
+        }
+
+        foreach (ParticleSystem paintSystem in paintSystems) {
+            if (paintSystem != null) {
+                Destroy (paintSystem.gameObject);
+            }
+        }
+        paintSystems.Clear ();
+    }
+
+    void OnValidate ()
+    {
+        RepairDistanceThresholds ();
+        RepairMaxPaintVertices ();
+        RepairMaxPaintSystems ();
+    }
 
 	// Use this for initialization
 	void Start () {
+        RepairDistanceThresholds ();
+        RepairMaxPaintVertices ();
+        RepairMaxPaintSystems ();
+
         if (painterParticlePrefab == null) {
             Debug.LogError ("ParticlePainter requires a painter particle prefab.");
             enabled = false;
@@ -43,6 +146,7 @@ public class ParticlePainter : MonoBehaviour {
         }
 
         currentPaintVertices = new List<Vector3> ();
+        EnsureParticleBuffer ();
         paintSystems = new List<ParticleSystem> ();
         frameUpdated = false;
         isInitialized = true;
@@ -65,6 +169,7 @@ public class ParticlePainter : MonoBehaviour {
     void OnDestroy ()
     {
         UnsubscribeFromEvents ();
+        ClearPaintSystems ();
     }
 
     private void SubscribeToEvents ()
@@ -110,11 +215,26 @@ public class ParticlePainter : MonoBehaviour {
         Matrix4x4 matrix = new Matrix4x4();
         matrix.SetColumn(3, camera.worldTransform.column3);
       
-        Vector3 currentPositon = UnityARMatrixOps.GetPosition(matrix) + (mainCamera.transform.forward * penDistance);
-        if (Vector3.Distance (currentPositon, previousPosition) > minDistanceThreshold) {
-            if (paintMode == 2) currentPaintVertices.Add (currentPositon);
+        Vector3 currentPosition = UnityARMatrixOps.GetPosition(matrix) + (mainCamera.transform.forward * penDistance);
+        if (!hasPreviousPosition) {
+            previousPosition = currentPosition;
+            hasPreviousPosition = true;
+            return;
+        }
+
+        float distance = Vector3.Distance (currentPosition, previousPosition);
+        if (distance < minDistanceThreshold) {
+            return;
+        }
+
+        previousPosition = currentPosition;
+        if (distance > maxDistanceThreshold) {
+            return;
+        }
+
+        if (paintMode == 2 && currentPaintVertices.Count < maxPaintVertices) {
+            currentPaintVertices.Add (currentPosition);
             frameUpdated = true;
-            previousPosition = currentPositon;
         }
     }
 
@@ -142,8 +262,11 @@ public class ParticlePainter : MonoBehaviour {
         }
 
         paintSystems.Add (currentPS);
+        RepairMaxPaintSystems ();
+        TrimPaintSystemsToLimit ();
         currentPS = Instantiate (painterParticlePrefab);
         currentPaintVertices = new List<Vector3> ();
+        EnsureParticleBuffer ();
     }
 
 	// Update is called once per frame
@@ -152,10 +275,15 @@ public class ParticlePainter : MonoBehaviour {
             return;
         }
 
+        RepairMaxPaintVertices ();
+        RepairMaxPaintSystems ();
+        TrimPaintSystemsToLimit ();
+        TrimCurrentPaintVerticesToLimit ();
+        EnsureParticleBuffer ();
+
         if (frameUpdated && paintMode == 2) {
             if ( currentPaintVertices.Count > 0) {
                 int numParticles = currentPaintVertices.Count;
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
                 int index = 0;
                 foreach (Vector3 currentPoint in currentPaintVertices) {     
                     particles [index].position = currentPoint;
@@ -165,7 +293,6 @@ public class ParticlePainter : MonoBehaviour {
                 }
                 currentPS.SetParticles (particles, numParticles);
             } else {
-                ParticleSystem.Particle[] particles = new ParticleSystem.Particle[1];
                 particles [0].startSize = 0.0f;
                 currentPS.SetParticles (particles, 1);
             }

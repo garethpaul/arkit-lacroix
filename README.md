@@ -58,15 +58,30 @@ make check
 scripts/check-baseline.sh
 ```
 
-Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in.
+When .NET 8 is available, `make test` compiles eleven checked-in production
+ARKit native-interface structs and enums and executes their ABI layout, backing
+type, numeric value, and flag-composition contracts. Build outputs stay in a
+temporary directory. This portable check does not compile Unity-dependent
+scripts or replace the Unity editor, Xcode export, or physical-device matrix.
+
+Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in. The native-interface .NET harness covers only the production sources that have no Unity assembly dependency.
+
+Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit
+Unity/ARKit matrix. It covers editor and Xcode export, camera permission,
+tracking, video textures, ambient light, bounded spawning and painting,
+ownership cleanup, privacy-safe evidence, and explicit unexecuted rows.
 
 GitHub Actions runs `make check` on pushes, pull requests, and manual
 dispatches. The workflow uses a commit-pinned checkout action, read-only
 repository access, and a bounded runtime. On hosted Linux runners without
 Unity, the SDK-free source baseline still runs and the Unity build step reports
 the required legacy editor.
+GitHub CodeQL default setup analyzes GitHub Actions and Unity C# without the
+legacy editor. It is intentionally not duplicated by an advanced workflow;
+the Objective-C++ bridge remains outside the successful default-setup result
+and requires a separately validated native-analysis path.
 
-The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive.
+The source baseline checks the active `Assets/GameScene.unity` build scene, stable scene/prefab GUIDs, generated Unity directory ignore policy, keeps the original 1000-can cleanup cap explicit, repairs invalid spawn caps, bounds spawn caps to the original 1000-can limit, keeps runtime cap repair in the shared spawn path, prunes missing spawned-can references before cap enforcement, evicts the oldest tracked can only after the live count exceeds the cap, avoids duplicate Rigidbody components on spawned cans, cleans up tracked cans when the spawner is disabled, guards AR ambient light updates when scene components or AR sessions are unavailable, and ensures `ParticlePainter` unsubscribes from AR frame and color-picker events when inactive while bounding paint samples to the configured movement window.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -89,6 +104,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   the tracked list reflects live spawned objects.
 - `SodaSpawn` evicts the oldest tracked can after a spawn exceeds `maxSodas`,
   avoiding periodic full-scene cleanup while retaining the configured limit.
+- `SodaSpawn` uses a repaired 0.1-second default cadence, bounded to 0.05-5
+  seconds, so can creation and steady-state eviction are not tied to frame rate.
 - `UnityARAmbient` skips ARKit intensity writes when its scene `Light` or AR
   session is unavailable.
 - `UnityARAmbient` refreshes missing AR ambient light dependencies before each
@@ -100,6 +117,26 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `ParticlePainter` validates required scene references before initialization,
   tolerates a missing main camera, and releases global AR frame and color-picker
   listeners when disabled or destroyed.
+- `ParticlePainter` repairs invalid distance thresholds, anchors the first valid
+  AR frame without painting, and advances past tracking jumps above the maximum
+  distance without adding a paint vertex.
+- `ParticlePainter` bounds each paint stroke to 10,000 retained samples and
+  reuses one particle buffer per active stroke instead of allocating a full
+  replacement buffer after every accepted AR frame.
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Point-cloud markers hide when they are not represented by the current AR frame.
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
+- The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
+  oldest ownership first, and releases retained balls when disabled.
+- UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
+- UnityARVideo detaches and releases its command buffer when disabled or
+  destroyed, then recreates it only when rendering resumes.
+- See `docs/plans/2026-06-14-arkit-lacroix-device-verification-checklist.md`
+  for the Unity/ARKit device evidence matrix and runtime non-claims.
 - Root `make lint`, `make test`, `make build`, and `make check` all preserve
   the SDK-free baseline before Unity-specific manual verification, including
   when invoked outside the repository root with `make -f`.
@@ -118,6 +155,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Actions baseline.
 - See `docs/plans/2026-06-10-unity-particle-painter-lifecycle.md` for the
   particle painter dependency and event-lifecycle guard.
+- See `docs/plans/2026-06-13-unity-particle-painter-buffer.md` for the bounded
+  stroke sample and reusable particle-buffer contract.
+- See `docs/plans/2026-06-13-unity-sodaspawn-cadence.md` for the bounded,
+  non-catch-up can spawn cadence.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for the maintenance history.
 

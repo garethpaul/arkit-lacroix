@@ -32,6 +32,25 @@ Helpful reports include:
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 - GitHub Actions runs the SDK-free `make check` baseline with a commit-pinned checkout action, read-only repository access, and a bounded runtime; review workflow, checker, and generated Unity metadata changes as part of the supply-chain surface.
+- Hosted `make check` installs pinned .NET tooling and compiles eleven production
+  ARKit native-interface sources, then executes ABI layout and enum-value
+  contracts. This evidence does not cover Unity-dependent scripts or native iOS
+  bridge compilation.
+- `ParticlePainter` bounds accepted AR movement between repaired minimum and
+  maximum thresholds so relocalization jumps do not create unintended paint
+  geometry or unbounded spatial samples.
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Point-cloud markers hide when they are not represented by the current AR frame.
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
+- The UnityARBallz BallMaker caps retained balls, prunes missing objects, evicts
+  oldest ownership first, and releases retained balls when disabled.
+- UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
+- UnityARVideo detaches and releases its command buffer on disable and destroy
+  so inactive camera components do not retain native rendering resources.
 
 ## Service and API Notes
 
@@ -40,6 +59,11 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+CodeQL default-setup results cover GitHub Actions and Unity C#. The
+Objective-C++ bridge is not covered by the successful default-setup jobs;
+triage findings and that native gap without weakening scene/source contracts
+or treating static analysis as a substitute for Unity 5.6.1p1 verification.
 
 ## Safe Research Guidelines
 

@@ -1,7 +1,60 @@
 # Changes
 
+## 2026-06-16
+
+- Added a .NET 8 compiler and executable ABI-contract gate for eleven production
+  ARKit native-interface structs and enums that do not depend on Unity
+  assemblies.
+- Kept the portable compiler evidence separate from the unexecuted Unity 5.6,
+  Xcode export, camera, and physical-device verification boundary.
+
+- Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
+- AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
+
+- Cleared pending point-cloud frame state on disable so re-enabled components
+  wait for a frame from the new enabled lifetime.
+- Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Particle point-cloud output hides during disabled frame reset instead of
+  leaving the last emitted cloud visible.
+
+## 2026-06-15
+
+- Point-cloud markers hide when they are not represented by the current AR frame.
+- Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- Corrected the particle point-cloud loop to honor its configured maximum.
+
+## 2026-06-14
+
+- HexColorField removes its end-edit listener from the matching event during
+  teardown instead of removing an unrelated value-change listener.
+- UnityARVideo detaches and releases its command buffer on disable
+  and destroy while preserving re-enable initialization.
+- Added an exact-commit ARKit Lacroix device verification matrix for editor and
+  Xcode export, camera permission, tracking, textures, ambient light, bounded
+  scene ownership, interruption, long sessions, and privacy-safe evidence, with every runtime row explicitly unexecuted.
+- UnityARBallz BallMover releases its tracked object before replacement and when disabled.
+- UnityARVideo reuses its external texture pair and releases it on teardown.
+- Bounded UnityARBallz BallMaker ownership with stale-reference pruning,
+  oldest-first eviction, missing-prefab guards, and disable cleanup.
+
+## 2026-06-13
+
+- ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
+- Bounded `ParticlePainter` to 10,000 retained samples per stroke and reused the
+  active particle buffer instead of reallocating the full stroke every update.
+- Replaced per-frame can creation with a repaired, inspector-configurable
+  0.05-5 second cadence and a 0.1-second default.
+- Scheduled from the current frame time so delayed frames do not trigger
+  catch-up spawn bursts.
+
 ## 2026-06-12
 
+- Documented GitHub CodeQL default setup for Actions and Unity C#, rejected a
+  conflicting advanced workflow, recorded the native bridge analysis gap, and
+  disabled checkout credential persistence in the existing Check workflow.
+- Repaired invalid particle-painting distance thresholds, anchored the first AR
+  frame without painting, and rejected tracking jumps above the configured
+  maximum while advancing the sampling anchor.
 - Replaced `SodaSpawn` cap-triggered full cleanup with oldest-first eviction so
   the configured cap remains populated without periodic destruction bursts.
 - Extended the SDK-free baseline and maintenance notes for the oldest tracked can
