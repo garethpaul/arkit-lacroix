@@ -14,6 +14,8 @@
 - Cleared pending point-cloud frame state on disable so re-enabled components
   wait for a frame from the new enabled lifetime.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
+- Particle point-cloud output hides during disabled frame reset instead of
+  leaving the last emitted cloud visible.
 
 ## 2026-06-15
 

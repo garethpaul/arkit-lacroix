@@ -45,6 +45,7 @@ public class PointCloudParticleExample : MonoBehaviour {
 	private void ClearFrameState ()
 	{
 		m_PointCloudData = null;
+		HidePointCloud ();
 		frameUpdated = false;
 	}
 
@@ -77,6 +78,10 @@ public class PointCloudParticleExample : MonoBehaviour {
 
 	private void HidePointCloud ()
 	{
+		if (currentPS == null) {
+			return;
+		}
+
 		ParticleSystem.Particle[] particles = new ParticleSystem.Particle[1];
 		particles [0].startSize = 0.0f;
 		currentPS.SetParticles (particles, 1);

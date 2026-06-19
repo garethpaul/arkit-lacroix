@@ -1104,7 +1104,7 @@ for point_cloud_source in "$POINT_CLOUD_PARTICLE" "$UNITY_POINT_CLOUD"; do
   fi
 done
 particle_frame_reset_body=$(sed -n '/private void ClearFrameState ()/,/^\t}/p' "$POINT_CLOUD_PARTICLE")
-for particle_frame_reset_contract in "m_PointCloudData = null;" "frameUpdated = false;"; do
+for particle_frame_reset_contract in "m_PointCloudData = null;" "HidePointCloud ();" "frameUpdated = false;"; do
   if ! printf '%s\n' "$particle_frame_reset_body" | grep -Fq "$particle_frame_reset_contract"; then
     printf '%s\n' "PointCloudParticleExample frame reset must keep: $particle_frame_reset_contract" >&2
     exit 1
@@ -1150,6 +1150,7 @@ for finite_particle_contract in \
   "private static bool IsFinitePoint (Vector3 point)" \
   "float.IsNaN (point.x)" \
   "float.IsInfinity (point.y)" \
+  "if (currentPS == null)" \
   "if (!IsFinitePoint (currentPoint))" \
   "int validParticleCount = 0;" \
   "particles [validParticleCount].position = currentPoint;" \
