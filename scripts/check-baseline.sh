@@ -1205,8 +1205,8 @@ done
 require_file "Makefile"
 require_contains ".gitignore" '!Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj' \
   "The intentional native-interface contract project must remain trackable."
-require_contains "Makefile" 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
-  "Makefile must resolve repository-root commands from its own location."
+require_contains "Makefile" 'override ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
+  "Makefile ROOT must resolve from its own location and reject command-line overrides."
 require_contains "Makefile" '$(ROOT)scripts/check-baseline.sh' \
   "Makefile must run the SDK-free baseline check."
 require_contains "Makefile" 'DOTNET ?= dotnet' \
