@@ -14,10 +14,13 @@ namespace UnityEngine.XR.iOS
 			UnityARUtility.InitializePlanePrefab (planePrefab);
 		}
 
-        void OnDestroy()
-        {
-            unityARAnchorManager.Destroy ();
-        }
+		void OnDestroy()
+		{
+			if (unityARAnchorManager != null) {
+				unityARAnchorManager.Destroy ();
+				unityARAnchorManager = null;
+			}
+		}
 
         void OnGUI()
         {
@@ -30,4 +33,3 @@ namespace UnityEngine.XR.iOS
         }
 	}
 }
-
