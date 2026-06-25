@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-25
+
+- Revalidated idempotent AR anchor event teardown and early plane-generator
+  destruction with the repository lifecycle gate and an independent Codex review.
+
 ## 2026-06-16
 
 - Added a .NET 8 compiler and executable ABI-contract gate for eleven production
