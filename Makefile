@@ -9,6 +9,7 @@ lint:
 
 test:
 	$(ROOT)scripts/check-baseline.sh
+	$(ROOT)scripts/check-anchor-lifecycle.sh
 	@if command -v "$(DOTNET)" >/dev/null 2>&1; then \
 		DOTNET="$(DOTNET)" "$(ROOT)scripts/run-native-interface-contracts.sh"; \
 	else \

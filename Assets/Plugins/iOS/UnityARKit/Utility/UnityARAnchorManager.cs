@@ -9,15 +9,37 @@ namespace UnityEngine.XR.iOS
 
 
 		private Dictionary<string, ARPlaneAnchorGameObject> planeAnchorMap;
+		private bool eventsSubscribed;
 
 
         public UnityARAnchorManager ()
 		{
 			planeAnchorMap = new Dictionary<string,ARPlaneAnchorGameObject> ();
+			SubscribeToEvents ();
+		}
+
+		private void SubscribeToEvents ()
+		{
+			if (eventsSubscribed) {
+				return;
+			}
+
 			UnityARSessionNativeInterface.ARAnchorAddedEvent += AddAnchor;
 			UnityARSessionNativeInterface.ARAnchorUpdatedEvent += UpdateAnchor;
 			UnityARSessionNativeInterface.ARAnchorRemovedEvent += RemoveAnchor;
+			eventsSubscribed = true;
+		}
 
+		private void UnsubscribeFromEvents ()
+		{
+			if (!eventsSubscribed) {
+				return;
+			}
+
+			UnityARSessionNativeInterface.ARAnchorAddedEvent -= AddAnchor;
+			UnityARSessionNativeInterface.ARAnchorUpdatedEvent -= UpdateAnchor;
+			UnityARSessionNativeInterface.ARAnchorRemovedEvent -= RemoveAnchor;
+			eventsSubscribed = false;
 		}
 
 
@@ -50,10 +72,12 @@ namespace UnityEngine.XR.iOS
 			}
 		}
 
-        public void Destroy()
-        {
-            foreach (ARPlaneAnchorGameObject arpag in GetCurrentPlaneAnchors()) {
-                GameObject.Destroy (arpag.gameObject);
+		public void Destroy()
+		{
+			UnsubscribeFromEvents ();
+
+			foreach (ARPlaneAnchorGameObject arpag in GetCurrentPlaneAnchors()) {
+				GameObject.Destroy (arpag.gameObject);
             }
 
             planeAnchorMap.Clear ();
@@ -65,4 +89,3 @@ namespace UnityEngine.XR.iOS
 		}
 	}
 }
-
