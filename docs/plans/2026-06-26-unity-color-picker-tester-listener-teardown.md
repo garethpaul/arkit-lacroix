@@ -24,3 +24,7 @@ the initial color assignment and active-lifetime renderer updates unchanged.
 - Official .NET SDK 8 container compiled and ran eleven production native-interface contracts with zero warnings or errors.
 - Three isolated anonymous-listener, missing-removal, and null-guard mutations failed for the intended reason.
 - Unity editor and device execution remain unverified locally.
+- Exact-head Check runs `28250864796` and `28250867946` passed; CodeQL run
+  `28250865522` passed Actions and C# analysis.
+- Codex review failed before analysis with OpenAI API HTTP 401; immutable
+  exact-head manual review found no actionable findings.
