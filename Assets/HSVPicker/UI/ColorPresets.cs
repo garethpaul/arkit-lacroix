@@ -13,6 +13,12 @@ public class ColorPresets : MonoBehaviour
 		picker.onValueChanged.AddListener(ColorChanged);
 	}
 
+	void OnDestroy()
+	{
+		if (picker != null)
+			picker.onValueChanged.RemoveListener(ColorChanged);
+	}
+
 	public void CreatePresetButton()
 	{
 		for (var i = 0; i < presets.Length; i++)

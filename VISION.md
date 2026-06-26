@@ -33,6 +33,8 @@ Priority:
 - Keep each particle-painting stroke bounded and reuse its active particle buffer
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- ColorPresets removes its runtime color listener during teardown while
+  preserving the legacy picker's active-lifetime behavior.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
 - AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.

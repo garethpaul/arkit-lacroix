@@ -125,6 +125,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   replacement buffer after every accepted AR frame.
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- ColorPresets removes its runtime color listener during teardown so destroyed
+  preset controls are not retained by the color picker.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
 - Point-cloud markers hide when they are not represented by the current AR frame.
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.

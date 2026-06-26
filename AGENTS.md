@@ -61,6 +61,8 @@
 - UnityARVideo reuses its external texture pair and releases it on teardown.
 - HexColorField removes its end-edit listener from the matching event during
   teardown so destroyed controls do not retain callbacks.
+- ColorPresets removes its runtime color listener during teardown so the picker
+  does not retain a callback targeting a destroyed presets component.
 
 ## Agent workflow
 
