@@ -1,5 +1,56 @@
 # Changes
 
+## 2026-06-25 22:08 PDT - P2 - Release ColorPresets listener
+
+### Summary
+
+Closed a UnityEvent ownership gap in the HSV picker so destroying
+`ColorPresets` no longer leaves its runtime color callback registered on a
+longer-lived picker.
+ColorPresets removes its runtime color listener during teardown while
+preserving the legacy component's active-lifetime behavior.
+
+### Work completed
+
+- Added a null-safe matching `onValueChanged.RemoveListener(ColorChanged)` teardown.
+- Added test-first source, documentation, plan, and ownership contracts.
+- Recorded the narrow design decision and Unity 5.6 API evidence.
+
+### Threads
+
+- Started: None.
+- Continued: None.
+- Stopped: None.
+
+### Files changed
+
+- `Assets/HSVPicker/UI/ColorPresets.cs` — safely releases the owned runtime listener even when the picker is destroyed first.
+- `scripts/check-baseline.sh` — rejects missing, mismatched, or duplicate pairs.
+- `docs/plans/2026-06-25-unity-color-presets-listener-teardown*.md` — records design and completion evidence.
+- `AGENTS.md`, `README.md`, `SECURITY.md`, `VISION.md` — document ownership.
+
+### Validation
+
+- Test-first baseline — failed before implementation with the expected missing-removal error.
+- Initial completed-evidence gate — failed because this entry lacked the canonical ownership phrase; corrected before final validation.
+- `make check` — passed; host dotnet and Unity remained unavailable as reported.
+- `make -f "$PWD/Makefile" check` — passed from the external invocation path.
+- `/bin/sh -n scripts/*.sh` and `git diff --check` — passed.
+- Official .NET SDK 8 container — compiled and ran eleven production native-interface contracts with zero warnings or errors.
+- Four isolated hostile mutations — rejected; restored fixture passed.
+
+### Bugs / findings
+
+- P2: `ColorPresets` registered a runtime UnityEvent callback without releasing it during teardown; teardown also needs to tolerate picker-first destruction.
+
+### Blockers
+
+- Unity 5.6.1p1 editor, iOS/Xcode export, camera, and physical-device checks were not executable locally.
+
+### Next action
+
+- Run hosted verification, review the exact PR diff, and merge if green.
+
 ## 2026-06-25
 
 - Revalidated idempotent AR anchor event teardown and early plane-generator

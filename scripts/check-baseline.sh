@@ -12,6 +12,7 @@ BALL_MAKER="$ROOT_DIR/Assets/Examples/BallMaker.cs"
 BALL_MOVER="$ROOT_DIR/Assets/Examples/BallMover.cs"
 UNITY_AR_VIDEO="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs"
 HEX_COLOR_FIELD="$ROOT_DIR/Assets/HSVPicker/UI/HexColorField.cs"
+COLOR_PRESETS="$ROOT_DIR/Assets/HSVPicker/UI/ColorPresets.cs"
 POINT_CLOUD_PARTICLE="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/PointCloudParticleExample.cs"
 UNITY_POINT_CLOUD="$ROOT_DIR/Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs"
 BALL_SCENE="$ROOT_DIR/Assets/UnityARBallz.unity"
@@ -34,6 +35,8 @@ BALL_MOVER_PLAN="docs/plans/2026-06-14-unity-ball-mover-ownership.md"
 VIDEO_TEXTURE_PLAN="docs/plans/2026-06-14-unity-ar-video-texture-ownership.md"
 VIDEO_COMMAND_BUFFER_PLAN="docs/plans/2026-06-14-unity-ar-video-command-buffer-ownership.md"
 HEX_LISTENER_PLAN="docs/plans/2026-06-14-unity-hex-listener-cleanup.md"
+COLOR_PRESETS_LISTENER_PLAN="docs/plans/2026-06-25-unity-color-presets-listener-teardown.md"
+COLOR_PRESETS_LISTENER_DESIGN="docs/plans/2026-06-25-unity-color-presets-listener-teardown-design.md"
 POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ownership.md"
 POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
 POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
@@ -89,6 +92,8 @@ for path in \
   "$VIDEO_TEXTURE_PLAN" \
   "$VIDEO_COMMAND_BUFFER_PLAN" \
   "$HEX_LISTENER_PLAN" \
+  "$COLOR_PRESETS_LISTENER_PLAN" \
+  "$COLOR_PRESETS_LISTENER_DESIGN" \
   "$POINT_CLOUD_DISABLE_RESET_PLAN" \
   "$POINT_CLOUD_VISIBILITY_PLAN" \
   "$CODEQL_PLAN" \
@@ -115,6 +120,7 @@ for path in \
   "Assets/Examples/BallMover.cs.meta" \
   "Assets/Plugins/iOS/UnityARKit/UnityARVideo.cs" \
   "Assets/HSVPicker/UI/HexColorField.cs" \
+  "Assets/HSVPicker/UI/ColorPresets.cs" \
   "Assets/UnityARBallz.unity" \
   "Assets/Models/LaCroix.prefab" \
   "Assets/Models/LaCroix.prefab.meta" \
@@ -1022,6 +1028,46 @@ done
 for hex_listener_plan_contract in "Status: Completed" "make check" "hostile mutations"; do
   require_contains "$HEX_LISTENER_PLAN" "$hex_listener_plan_contract" \
     "HexColorField listener cleanup plan must record completed verification."
+done
+
+require_contains "Assets/HSVPicker/UI/ColorPresets.cs" \
+  "picker.onValueChanged.AddListener(ColorChanged);" \
+  "ColorPresets must register its runtime color listener."
+require_contains "Assets/HSVPicker/UI/ColorPresets.cs" \
+  "picker.onValueChanged.RemoveListener(ColorChanged);" \
+  "ColorPresets must release its runtime color listener during teardown."
+require_contains "Assets/HSVPicker/UI/ColorPresets.cs" \
+  "void OnDestroy" \
+  "ColorPresets must own an explicit destruction teardown."
+color_presets_destroy_scope=$(sed -n '/void OnDestroy()/,/^[[:space:]]*}/p' "$COLOR_PRESETS")
+if ! printf '%s\n' "$color_presets_destroy_scope" | grep -Fq "if (picker != null)"; then
+  printf '%s\n' "ColorPresets teardown must tolerate the picker being destroyed first." >&2
+  exit 1
+fi
+if [ "$(grep -Fc 'AddListener(ColorChanged);' "$COLOR_PRESETS")" -ne 1 ] || \
+   [ "$(grep -Fc 'RemoveListener(ColorChanged);' "$COLOR_PRESETS")" -ne 1 ]; then
+  printf '%s\n' "ColorPresets must own exactly one matched ColorChanged listener pair." >&2
+  exit 1
+fi
+for color_presets_listener_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$color_presets_listener_doc" \
+    "ColorPresets removes its runtime color listener during teardown" \
+    "$color_presets_listener_doc must document ColorPresets listener ownership."
+done
+for color_presets_design_contract in \
+  "ColorPresets.Awake" \
+  "RemoveListener(ColorChanged)" \
+  "UnityEvent.RemoveListener"; do
+  require_contains "$COLOR_PRESETS_LISTENER_DESIGN" "$color_presets_design_contract" \
+    "ColorPresets listener design must retain decision evidence."
+done
+for color_presets_plan_contract in \
+  "Status: Completed" \
+  "make check" \
+  "Four isolated hostile mutations" \
+  "physical-device execution were"; do
+  require_contains "$COLOR_PRESETS_LISTENER_PLAN" "$color_presets_plan_contract" \
+    "ColorPresets listener plan must retain completed verification evidence."
 done
 
 for point_cloud_source in "$POINT_CLOUD_PARTICLE" "$UNITY_POINT_CLOUD"; do

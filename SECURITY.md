@@ -41,6 +41,8 @@ Helpful reports include:
   geometry or unbounded spatial samples.
 - ParticlePainter caps active and completed paint systems and releases owned systems on destruction.
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
+- ColorPresets removes its runtime color listener during teardown so the picker
+  cannot retain a callback targeting a destroyed component.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
 - Point-cloud markers hide when they are not represented by the current AR frame.
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
