@@ -1,5 +1,28 @@
 # Changes
 
+## 2026-06-26 - P1 - Bound Unity point-marker allocation
+
+### Summary
+
+Prevented malformed scene serialization or runtime assignments from making
+`UnityPointCloudExample` instantiate an unbounded number of marker objects.
+UnityPointCloudExample repairs invalid marker counts before allocation so malformed serialization cannot create more than 1,000 owned markers.
+
+### Work completed
+
+- Preserved the public serialized `uint` and all checked-in scene values.
+- Added startup and inspector-time repair for zero or values above 1,000.
+- Added source, documentation, and implementation-plan contracts.
+
+### Validation
+
+- Test-first baseline failed on the missing default point-count constant.
+- `scripts/check-baseline.sh` passed after the bounded repair.
+- `make check` and external-directory `make check` passed.
+- Official .NET SDK 8 container compiled and ran eleven production native-interface contracts with zero warnings or errors.
+- Three isolated upper-bound, startup-repair, and ceiling mutations failed for the intended reasons.
+- Unity 5.6.1p1 editor, iOS/Xcode export, ARKit session, camera, and physical-device execution remain unverified locally.
+
 ## 2026-06-26 - P2 - Release ColorPickerTester listener
 
 ### Summary
