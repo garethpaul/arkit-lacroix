@@ -63,6 +63,8 @@
   teardown so destroyed controls do not retain callbacks.
 - ColorPresets removes its runtime color listener during teardown so the picker
   does not retain a callback targeting a destroyed presets component.
+- ColorPickerTester removes its runtime color listener during teardown so the
+  picker scene cannot retain its destroyed renderer callback.
 
 ## Agent workflow
 

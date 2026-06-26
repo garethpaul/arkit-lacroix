@@ -1,5 +1,28 @@
 # Changes
 
+## 2026-06-26 - P2 - Release ColorPickerTester listener
+
+### Summary
+
+Replaced the picker test scene's anonymous color callback with a named listener
+and removed it during destruction so a longer-lived picker cannot retain a
+callback targeting the destroyed tester component.
+ColorPickerTester removes its runtime color listener during teardown while
+preserving the existing renderer color updates during the component lifetime.
+
+### Validation
+
+- Test-first baseline failed on the missing removable named listener.
+- `make check`
+- External-directory `make check`
+- Official .NET SDK 8 container compiled and ran eleven production native-interface contracts with zero warnings or errors.
+- Three isolated listener-identity and teardown mutations failed for the intended reason.
+- Unity 5.6.1p1 editor, iOS export, camera, and physical-device behavior remain unverified locally.
+- Exact-head Check runs `28250864796` and `28250867946` passed in 20 and 17
+  seconds; CodeQL run `28250865522` passed Actions and C# analysis.
+- Codex review was blocked before analysis by repeated OpenAI API HTTP 401
+  failures; immutable exact-head manual review found no actionable findings.
+
 ## 2026-06-26 - P1 - Remove tracked Unity password material
 
 ### Summary

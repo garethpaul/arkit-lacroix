@@ -35,6 +35,8 @@ Priority:
 - Point-cloud examples release AR frame listeners and owned scene objects during lifecycle teardown.
 - ColorPresets removes its runtime color listener during teardown while
   preserving the legacy picker's active-lifetime behavior.
+- ColorPickerTester removes its runtime color listener during teardown while
+  preserving the picker test scene's active-lifetime renderer updates.
 - Point-cloud examples clear pending AR frame data when disabled before accepting a new enabled-lifetime frame.
 - Point-cloud renderers omit non-finite AR coordinates before writing Unity positions.
 - AR hit-test interactions reject non-finite spawn and movement coordinates before writing Unity transforms.
