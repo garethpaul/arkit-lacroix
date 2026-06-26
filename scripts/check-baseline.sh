@@ -44,6 +44,7 @@ POINT_CLOUD_LIFECYCLE_PLAN="docs/plans/2026-06-15-unity-point-cloud-lifecycle-ow
 POINT_CLOUD_DISABLE_RESET_PLAN="docs/plans/2026-06-15-unity-point-cloud-disable-frame-reset.md"
 POINT_CLOUD_VISIBILITY_PLAN="docs/plans/2026-06-15-unity-point-cloud-marker-visibility.md"
 POINT_CLOUD_FINITE_PLAN="docs/plans/2026-06-15-unity-point-cloud-finite-coordinates.md"
+POINT_CLOUD_COUNT_PLAN="docs/plans/2026-06-26-unity-point-cloud-count-bound.md"
 HIT_TEST_FINITE_PLAN="docs/plans/2026-06-16-unity-hit-test-finite-coordinates.md"
 NATIVE_INTERFACE_CONTRACT_PLAN="docs/plans/2026-06-16-arkit-native-interface-contracts.md"
 CODEQL_PLAN="docs/plans/2026-06-12-codeql-baseline.md"
@@ -100,6 +101,7 @@ for path in \
   "$COLOR_PICKER_TESTER_LISTENER_PLAN" \
   "$POINT_CLOUD_DISABLE_RESET_PLAN" \
   "$POINT_CLOUD_VISIBILITY_PLAN" \
+  "$POINT_CLOUD_COUNT_PLAN" \
   "$CODEQL_PLAN" \
   "$SPAWN_CADENCE_PLAN" \
   "$DEVICE_VERIFICATION_PLAN" \
@@ -1176,6 +1178,37 @@ for unity_point_cleanup_contract in \
   "m_PointCloudData = null;"; do
   require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" "$unity_point_cleanup_contract" \
     "UnityPointCloudExample must keep owned point cleanup."
+done
+for unity_point_count_contract in \
+  "private const uint DefaultPointsToShow = 100;" \
+  "private const uint MaxPointsToShow = 1000;" \
+  "public void OnValidate()" \
+  "RepairPointCount ();" \
+  "private void RepairPointCount()" \
+  "numPointsToShow < 1" \
+  "numPointsToShow > MaxPointsToShow" \
+  "numPointsToShow = DefaultPointsToShow;"; do
+  require_contains "Assets/Plugins/iOS/UnityARKit/UnityPointCloudExample.cs" \
+    "$unity_point_count_contract" \
+    "UnityPointCloudExample must bound marker allocation: $unity_point_count_contract"
+done
+if [ "$(grep -Fc 'RepairPointCount ();' "$UNITY_POINT_CLOUD")" -ne 2 ]; then
+  printf '%s\n' "UnityPointCloudExample must repair its marker count exactly once in OnValidate and once before startup allocation." >&2
+  exit 1
+fi
+for point_cloud_count_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  require_contains "$point_cloud_count_doc" \
+    "UnityPointCloudExample repairs invalid marker counts before allocation so malformed serialization cannot create more than 1,000 owned markers." \
+    "$point_cloud_count_doc must document the bounded point-marker allocation contract."
+done
+for point_cloud_count_plan_contract in \
+  "Status: Completed" \
+  "DefaultPointsToShow" \
+  "missing-startup-repair" \
+  "Official .NET SDK 8 container" \
+  "Unity 5.6.1p1 editor"; do
+  require_contains "$POINT_CLOUD_COUNT_PLAN" "$point_cloud_count_plan_contract" \
+    "Point-marker count plan must retain completed verification evidence."
 done
 for point_cloud_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   require_contains "$point_cloud_doc" \

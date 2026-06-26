@@ -5,15 +5,24 @@ using System.Collections.Generic;
 
 public class UnityPointCloudExample : MonoBehaviour
 {
-    public uint numPointsToShow = 100;
+    private const uint DefaultPointsToShow = 100;
+    private const uint MaxPointsToShow = 1000;
+
+    public uint numPointsToShow = DefaultPointsToShow;
     public GameObject PointCloudPrefab = null;
     private List<GameObject> pointCloudObjects;
     private Vector3[] m_PointCloudData;
     private bool isInitialized;
     private bool eventsSubscribed;
 
+    public void OnValidate()
+    {
+        RepairPointCount ();
+    }
+
     public void Start()
     {
+        RepairPointCount ();
         if (PointCloudPrefab != null)
         {
             pointCloudObjects = new List<GameObject> ();
@@ -25,6 +34,14 @@ public class UnityPointCloudExample : MonoBehaviour
         }
         isInitialized = true;
         SubscribeToEvents ();
+    }
+
+    private void RepairPointCount()
+    {
+        if (numPointsToShow < 1 || numPointsToShow > MaxPointsToShow)
+        {
+            numPointsToShow = DefaultPointsToShow;
+        }
     }
 
     public void OnEnable()
