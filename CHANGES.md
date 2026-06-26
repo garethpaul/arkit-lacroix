@@ -1,5 +1,23 @@
 # Changes
 
+## 2026-06-26 - P1 - Remove tracked Unity password material
+
+### Summary
+
+Cleared the unused PSP2 package-password value from the tracked Unity project
+settings and added a repository gate that rejects any future nonblank value.
+
+### Validation
+
+- `make check`
+- A hostile nonblank-value mutation must fail the baseline gate.
+- Gitleaks current-tree scan must report no findings.
+
+### Follow-up
+
+- Treat the historical value as potentially exposed and revoke or rotate it if
+  it was ever active; this repository change does not rewrite public history.
+
 ## 2026-06-25 22:08 PDT - P2 - Release ColorPresets listener
 
 ### Summary

@@ -4,6 +4,7 @@ set -eu
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PROJECT_VERSION="$ROOT_DIR/ProjectSettings/ProjectVersion.txt"
 BUILD_SETTINGS="$ROOT_DIR/ProjectSettings/EditorBuildSettings.asset"
+PROJECT_SETTINGS="$ROOT_DIR/ProjectSettings/ProjectSettings.asset"
 GAME_SCENE="$ROOT_DIR/Assets/GameScene.unity"
 README="$ROOT_DIR/README.md"
 SODA_SPAWN="$ROOT_DIR/Assets/SodaSpawn.cs"
@@ -225,6 +226,15 @@ require_contains "ProjectSettings/ProjectVersion.txt" "m_EditorVersion: 5.6.1p1"
   "Unity editor version must stay documented as 5.6.1p1."
 require_contains "ProjectSettings/EditorBuildSettings.asset" "path: Assets/GameScene.unity" \
   "Active build scene must point to Assets/GameScene.unity."
+
+if [ "$(grep -Ec '^[[:space:]]*psp2PackagePassword:' "$PROJECT_SETTINGS")" -ne 1 ]; then
+  printf '%s\n' "Project settings must retain exactly one PSP2 package-password key." >&2
+  exit 1
+fi
+if grep -Eq '^[[:space:]]*psp2PackagePassword:[[:space:]]*[^[:space:]]' "$PROJECT_SETTINGS"; then
+  printf '%s\n' "Project settings must not retain PSP2 package-password material." >&2
+  exit 1
+fi
 
 if grep -Fq "Assets/UnityARKitScene.unity" "$BUILD_SETTINGS"; then
   printf '%s\n' "Build settings must not reference the missing UnityARKitScene scene." >&2
