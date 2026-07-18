@@ -110,6 +110,7 @@ for path in \
   "Tests/NativeInterfaceContracts/NativeInterfaceContracts.csproj" \
   "Tests/NativeInterfaceContracts/Program.cs" \
   "scripts/run-native-interface-contracts.sh" \
+  "scripts/check-contract-mutation-detection.sh" \
   "ProjectSettings/ProjectVersion.txt" \
   "ProjectSettings/EditorBuildSettings.asset" \
   "Assets/GameScene.unity" \
@@ -140,6 +141,48 @@ if [ ! -x "$ROOT_DIR/scripts/run-native-interface-contracts.sh" ]; then
   printf '%s\n' "Native-interface contract runner must remain executable." >&2
   exit 1
 fi
+
+if [ ! -x "$ROOT_DIR/scripts/check-contract-mutation-detection.sh" ]; then
+  printf '%s\n' "Native-interface contract mutation detector must remain executable." >&2
+  exit 1
+fi
+
+# The mutation detector is what proves the contract suite can still fail. Pin the
+# structural pieces that make it meaningful: it must plant defects, it must run
+# the real suite, and it must fail when a planted defect goes undetected.
+for mutation_detector_contract in \
+  'UNDETECTED MUTATION' \
+  'run-native-interface-contracts.sh' \
+  'harness is INVALID' \
+  'expect_suite_detects' \
+  'exit 1'; do
+  require_contains "scripts/check-contract-mutation-detection.sh" "$mutation_detector_contract" \
+    "Contract mutation detector must keep its detection proof: $mutation_detector_contract"
+done
+
+# The contract executable must count and report executed assertions, and the
+# runner must enforce a floor on that count. A no-op assertion mechanism reports
+# fewer assertions than it claims to run.
+for assertion_floor_contract in \
+  'executed += 1;' \
+  'assertions executed: ' \
+  'ExpectedAssertionCount'; do
+  require_contains "Tests/NativeInterfaceContracts/Program.cs" "$assertion_floor_contract" \
+    "Native-interface contract executable must report executed assertions: $assertion_floor_contract"
+done
+
+for assertion_floor_runner_contract in \
+  'MINIMUM_ASSERTIONS=11' \
+  'assertions executed: ' \
+  '-lt "$MINIMUM_ASSERTIONS"'; do
+  require_contains "scripts/run-native-interface-contracts.sh" "$assertion_floor_runner_contract" \
+    "Native-interface runner must enforce an assertion floor: $assertion_floor_runner_contract"
+done
+
+require_contains "Makefile" '$(ROOT)scripts/check-contract-mutation-detection.sh' \
+  "Makefile tests must execute the native-interface contract mutation detector."
+require_contains ".github/workflows/check.yml" "REQUIRE_NATIVE_CONTRACTS=1" \
+  "CI must require the native-interface contracts to actually run."
 
 for native_contract_source in \
   ARErrorCode.cs \
