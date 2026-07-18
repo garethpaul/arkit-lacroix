@@ -64,6 +64,15 @@ type, numeric value, and flag-composition contracts. Build outputs stay in a
 temporary directory. This portable check does not compile Unity-dependent
 scripts or replace the Unity editor, Xcode export, or physical-device matrix.
 
+`make test` then runs `scripts/check-contract-mutation-detection.sh`, which
+copies the tree to a scratch directory, plants real defects in the production
+native-interface sources one at a time, runs the real contract suite against
+each, and fails if any planted defect goes undetected. This proves the suite can
+still fail rather than pinning text that claims it can. The contract executable
+also reports how many assertions it executed and the runner enforces a floor on
+that count. Set `REQUIRE_NATIVE_CONTRACTS=1` (as CI does) to turn a missing
+dotnet into a hard failure instead of a silent skip.
+
 Unity editor version: 5.6.1p1. This host does not have Unity installed, so full editor, iOS export, and ARKit device verification must happen on a machine with the matching legacy Unity/iOS toolchain. The root `make build` target keeps the SDK-free preflight repeatable and reports the Unity requirement because no batch build method is checked in. The native-interface .NET harness covers only the production sources that have no Unity assembly dependency.
 
 Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit

@@ -28,4 +28,4 @@ jobs:
           dotnet-version: 8.0.422
 
       - name: Run baseline
-        run: make check
+        run: make check REQUIRE_NATIVE_CONTRACTS=1

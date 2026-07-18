@@ -27,4 +27,29 @@ export DOTNET_CLI_HOME NUGET_PACKAGES DOTNET_CLI_TELEMETRY_OPTOUT
   --property:BaseIntermediateOutputPath="$BUILD_DIR/obj/" \
   --property:UseAppHost=false
 
-"$DOTNET" "$BUILD_DIR/bin/NativeInterfaceContracts.dll"
+MINIMUM_ASSERTIONS=11
+CONTRACT_OUTPUT="$BUILD_DIR/contract-output.txt"
+
+contract_status=0
+"$DOTNET" "$BUILD_DIR/bin/NativeInterfaceContracts.dll" >"$CONTRACT_OUTPUT" 2>&1 || contract_status=$?
+cat -- "$CONTRACT_OUTPUT"
+
+if [ "$contract_status" -ne 0 ]; then
+  exit "$contract_status"
+fi
+
+# Assert an assertion floor from the runner's own output. A shadowed or removed
+# Expect() mechanism reports fewer executed assertions and cannot satisfy this,
+# even though every pinned assertion call site stays byte-identical.
+executed=$(sed -n 's/^assertions executed: \([0-9][0-9]*\)$/\1/p' "$CONTRACT_OUTPUT" | tail -1)
+
+if [ -z "$executed" ]; then
+  printf '%s\n' "Native-interface contracts did not report an executed assertion count." >&2
+  exit 1
+fi
+
+if [ "$executed" -lt "$MINIMUM_ASSERTIONS" ]; then
+  printf 'Native-interface contracts executed %s assertions; at least %s are required.\n' \
+    "$executed" "$MINIMUM_ASSERTIONS" >&2
+  exit 1
+fi

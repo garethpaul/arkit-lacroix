@@ -4,10 +4,14 @@ using UnityEngine.XR.iOS;
 
 internal static class Program
 {
+    private const int ExpectedAssertionCount = 11;
+
     private static int failures;
+    private static int executed;
 
     private static void Expect(bool condition, string message)
     {
+        executed += 1;
         if (condition)
         {
             return;
@@ -38,8 +42,19 @@ internal static class Program
             (int)ARTrackingStateReason.ARTrackingStateReasonInsufficientFeatures == 3,
             "insufficient-features reason value");
 
+        Console.WriteLine("assertions executed: " + executed);
+
+        if (executed < ExpectedAssertionCount)
+        {
+            Console.Error.WriteLine(
+                "FAIL: assertion floor breached; expected at least " + ExpectedAssertionCount +
+                " executed assertions but observed " + executed);
+            return 1;
+        }
+
         if (failures != 0)
         {
+            Console.Error.WriteLine("failing assertions: " + failures);
             return 1;
         }
 
